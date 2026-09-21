@@ -139,10 +139,10 @@ data/raw/readmes/fastapi__fastapi.md
 
 ### 4.2 Issues
 
-For each repo, fetch **both open and closed** issues from a defined time window (e.g. the last 2 years). Issues endpoint returns issues **and** PRs mixed — filter with `type`.
+For each repo, fetch **both open and closed** issues from a defined time window (e.g. the last 6 months). Issues endpoint returns issues **and** PRs mixed — filter with `type`.
 
 ```
-GET /repos/{owner}/{repo}/issues?state=all&per_page=100&since=2024-09-01T00:00:00Z
+GET /repos/{owner}/{repo}/issues?state=all&per_page=100&since=2026-03-21T00:00:00Z
 ```
 
 **Example response element** (shortened):
@@ -261,7 +261,7 @@ data/
 
 ## 6. Cleaning the data
 
-Run everything as scripts so results are reproducible (`scripts/clean.py`).
+Run everything as scripts so results are reproducible (`data_collection/clean.py`).
 
 ### 6.1 Clean the metadata (structured fields)
 
@@ -381,8 +381,8 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 | Task                                   | Owner (suggested)          |
 | -------------------------------------- | -------------------------- |
 | Pick + review the 100–200 repo list    | 1 person                   |
-| Write the GitHub API collector scripts | 1–2 people                 |
-| Cache raw responses to `data/raw/`     | whoever runs the collector |
+| Write `data_collection/main.py` + the two collection scripts | 1–2 people |
+| Run `data_collection/main.py` and cache raw responses to `data/raw/` | whoever runs the scripts |
 | Write cleaning + text pipeline         | 1 person                   |
 | PR→issue linking + label generation    | 1 person                   |
 | EDA notebooks on cleaned tables        | 1 person (Week 2)          |
