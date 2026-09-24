@@ -12,9 +12,9 @@ For each repo:
 
 1. Repo info — description, topics, stars, etc.
 2. README — the raw text file
-3. Issues created in the last 6 months — title + body are the text the NLP model matches on
-4. Pull requests in the last 6 months — tells us which developer fixed which issue
+3. Issues created in the last 3 months — title + body are the text the NLP model matches on
 
+4. Pull requests in the last 3 months — tells us which developer fixed which issue
 Output is just a folder of JSON files, sitting on your machine.
 
 ---
@@ -51,9 +51,10 @@ All collection scripts live in the `data_collection/` folder:
 data_collection/
 ├── main.py                     # runs everything in one go (or a single step)
 ├── github_client.py            # shared API client (reads the token from .env)
-├── find_repos.py               # search for candidate repos
+├── generate_repo_list.py       # auto-build repo_list_candidates.csv from searches
+├── find_repos.py               # search a single query for candidate repos
 ├── collect_repos.py            # repo info + README + languages + topics
-└── collect_issues_and_prs.py   # issues + pull requests (last 6 months)
+└── collect_issues_and_prs.py   # issues + pull requests (last 3 months, filtered)
 ```
 
 No one needs to write any code. Just use these as-is.
@@ -62,23 +63,31 @@ No one needs to write any code. Just use these as-is.
 
 ## 3. Pick the repos (human decision, do this first)
 
-Everything depends on this list, so agree on it before collecting.
+Everything depends on this list, so agree on it before collecting. The quickest path is to auto-generate a first draft and then prune it.
 
-1. Find candidates with the search API:
+1. Generate a candidate list from several domain searches:
+
+   ```bash
+   python3 data_collection/generate_repo_list.py
+   ```
+
+   This applies the keep/drop rules for you (not archived, active in last 3 months, min stars, not a tutorial/awesome-list repo, deduped across queries) and writes `data/repo_list_candidates.csv`. Tune with flags, e.g.:
+
+   ```bash
+   python3 data_collection/generate_repo_list.py --per-query 40 --min-stars 2000
+   ```
+
+2. Or search one query at a time:
 
    ```bash
    python3 data_collection/find_repos.py "language:python stars:>5000"
    ```
 
-   Or search directly for a term (e.g. `fastapi`, `django`, `pandas`, `langchain`).
+   Change the query to whatever fits the domain (e.g. `fastapi`, `django`, `pandas`, `langchain`, `react`, `go`).
 
-2. Keep repos that are:
-   - active (updated within the last 6 months)
-   - not archived
-   - have open issues
-   - in 1–2 focused domains (e.g. Python web/API or Python data/ML)
+3. Review the candidates and prune: keep repos that are active (updated in the last 3 months), not archived, have open issues, and fit a few focused ecosystems (e.g. Python, JavaScript/TypeScript, Go). Delete anything that doesn't fit.
 
-3. Save the agreed list to `data/repo_list.csv`:
+4. Save the final agreed list to `data/repo_list.csv`:
    ```csv
    owner,repo,full_name
    fastapi,fastapi,fastapi/fastapi
@@ -116,7 +125,7 @@ python3 data_collection/collect_issues_and_prs.py
 ```
 
 - `collect_repos.py` saves repo info, README, languages and topics.
-- `collect_issues_and_prs.py` saves issues + pull requests created in the **last 6 months** (the 6-month window is set in `SINCE` at the top of the script).
+- `collect_issues_and_prs.py` saves issues + pull requests created in the **last 3 months** (the 3-month window is set in `SINCE` at the top of the script).
 - The API returns 100 records per page, so the scripts page through until there's nothing left.
 
 Note on the issues endpoint: it returns PRs mixed in with issues. A record where `"pull_request"` is not null is actually a PR — that's expected, we filter it during cleaning in Week 2.
@@ -142,6 +151,7 @@ op3nsrc/
 └── data_collection/
     ├── main.py
     ├── github_client.py
+    ├── generate_repo_list.py
     ├── find_repos.py
     ├── collect_repos.py
     └── collect_issues_and_prs.py

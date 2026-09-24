@@ -18,7 +18,7 @@ from github_client import RAW, REPO_LIST
 
 STEPS = {
     "repos": ("collect_repos", "collect_repos", "repo metadata (info, README, languages, topics)"),
-    "issues_and_prs": ("collect_issues_and_prs", "collect_issues_and_prs", "issues + pull requests (last 6 months)"),
+    "issues_and_prs": ("collect_issues_and_prs", "collect_issues_and_prs", "issues + pull requests (last 3 months)"),
 }
 
 

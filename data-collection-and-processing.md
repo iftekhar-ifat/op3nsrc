@@ -37,18 +37,18 @@ Cleaned text documents (for the NLP model)
 We will **not** collect all of GitHub. We pick a bounded, relevant set:
 
 - **Size:** 100–200 active repositories.
-- **Domain:** keep it focused — e.g. Python web/AI/ML projects (`fastapi`, `pandas`, `scikit-learn`, `django`, `jupyter`, `langchain`, ...).
-- **Criteria for inclusion:** not archived, has open issues, has a `good first issue` or `help wanted` label somewhere, active in the last 6 months.
+- **Domain:** a few focused ecosystems — e.g. Python (web/AI/ML), JavaScript/TypeScript (web), Go, Rust (`fastapi`, `pandas`, `django`, `react`, `langchain`, `go`, ...).
+- **Criteria for inclusion:** not archived, has open issues, has a `good first issue` or `help wanted` label somewhere, active in the last 3 months.
 
 ### How to find candidate repos
 
-Use the GitHub **search API**:
+Use the GitHub **search API** (one query per ecosystem/domain):
 
 ```bash
 curl -s "https://api.github.com/search/repositories?q=language:python+stars:>5000&sort=stars&order=desc&per_page=50" -H "Accept: application/vnd.github+json"
 ```
 
-Then manually review the top ~150 results and keep the ones that fit. Save the final list in a file we all share, e.g. `data/repo_list.csv`:
+Or run `python3 data_collection/generate_repo_list.py` to do this for several queries at once. Then manually review the candidates and keep the ones that fit. Save the final list in a file we all share, e.g. `data/repo_list.csv`:
 
 ```csv
 owner,repo,full_name
@@ -139,10 +139,10 @@ data/raw/readmes/fastapi__fastapi.md
 
 ### 4.2 Issues
 
-For each repo, fetch **both open and closed** issues from a defined time window (e.g. the last 6 months). Issues endpoint returns issues **and** PRs mixed — filter with `type`.
+For each repo, fetch **both open and closed** issues from a defined time window (e.g. the last 3 months). Issues endpoint returns issues **and** PRs mixed — filter with `type`.
 
 ```
-GET /repos/{owner}/{repo}/issues?state=all&per_page=100&since=2026-03-21T00:00:00Z
+GET /repos/{owner}/{repo}/issues?state=all&per_page=100&since=2026-06-24T00:00:00Z
 ```
 
 **Example response element** (shortened):

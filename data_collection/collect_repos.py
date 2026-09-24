@@ -27,7 +27,8 @@ from github_client import RAW, REPO_LIST, get
 def collect_repos() -> int:
     """Download repo metadata for every repo in repo_list.csv.
 
-    Returns the number of repos collected.
+    A failure on one repo is reported and skipped, so the rest still gets
+    collected. Returns the number of repos attempted.
     """
     if not REPO_LIST.exists():
         raise SystemExit(
@@ -41,29 +42,34 @@ def collect_repos() -> int:
     for one in repos:
         full = one["full_name"]
         stem = full.replace("/", "__")
+        try:
+            info = get(f"/repos/{full}")
+            (RAW / "repos" / f"{stem}.json").write_text(json.dumps(info, indent=2))
 
-        info = get(f"/repos/{full}")
-        (RAW / "repos" / f"{stem}.json").write_text(json.dumps(info, indent=2))
+            readme = requests.get(
+                f"https://raw.githubusercontent.com/{full}/HEAD/README.md",
+                timeout=30,
+            )
+            (RAW / "readmes" / f"{stem}.md").write_text(readme.text)
 
-        readme = requests.get(
-            f"https://raw.githubusercontent.com/{full}/HEAD/README.md"
-        )
-        (RAW / "readmes" / f"{stem}.md").write_text(readme.text)
+            langs = get(f"/repos/{full}/languages")
+            (RAW / "repos" / f"{stem}__languages.json").write_text(
+                json.dumps(langs, indent=2)
+            )
 
-        langs = get(f"/repos/{full}/languages")
-        (RAW / "repos" / f"{stem}__languages.json").write_text(
-            json.dumps(langs, indent=2)
-        )
+            topics = get(
+                f"/repos/{full}/topics",
+                headers={"Accept": "application/vnd.github.mercy-preview+json"},
+            )
+            (RAW / "repos" / f"{stem}__topics.json").write_text(
+                json.dumps(topics, indent=2)
+            )
 
-        topics = get(
-            f"/repos/{full}/topics",
-            headers={"Accept": "application/vnd.github.mercy-preview+json"},
-        )
-        (RAW / "repos" / f"{stem}__topics.json").write_text(
-            json.dumps(topics, indent=2)
-        )
-
-        print("  collected:", full)
+            print("  collected:", full)
+        except SystemExit:
+            raise
+        except Exception as exc:
+            print(f"  !!! failed on {full}: {exc} (skipping repo)")
 
     return len(repos)
 
