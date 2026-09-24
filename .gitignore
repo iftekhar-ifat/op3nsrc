@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# local raw dataset
+data/raw/
+data/
