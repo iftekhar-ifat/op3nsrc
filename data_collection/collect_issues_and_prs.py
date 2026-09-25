@@ -55,6 +55,8 @@ def _is_useful_issue(rec):
 
 
 def _is_useful_pull(rec):
+    if (rec.get("created_at") or "") < SINCE:
+        return False
     if not rec.get("merged_at"):
         return False
     login = (rec.get("user") or {}).get("login", "")
@@ -64,16 +66,17 @@ def _is_useful_pull(rec):
     return bool(ISSUE_LINK.search(text))
 
 
-def fetch_pages(stem, subfolder, path, params, useful, max_records):
+def fetch_pages(stem, subfolder, endpoint, params, useful, max_records):
     page = 1
     kept = 0
     while kept < max_records:
-        items = get(f"/repos/{path}", {**params, "page": page})
+        items = get(endpoint, {**params, "page": page})
         if not items:
             break
 
         useful_items = [rec for rec in items if useful(rec)]
         if useful_items:
+            useful_items = useful_items[: max_records - kept]
             (RAW / subfolder / f"{stem}__page{page}.json").write_text(
                 json.dumps(useful_items)
             )
@@ -106,7 +109,7 @@ def collect_issues_and_prs() -> int:
             fetch_pages(
                 stem,
                 "issues",
-                full,
+                f"/repos/{full}/issues",
                 {"state": "all", "per_page": 100, "since": SINCE},
                 _is_useful_issue,
                 MAX_ISSUES_PER_REPO,
@@ -114,7 +117,7 @@ def collect_issues_and_prs() -> int:
             fetch_pages(
                 stem,
                 "pulls",
-                full,
+                f"/repos/{full}/pulls",
                 {"state": "all", "per_page": 100, "sort": "created", "direction": "desc"},
                 _is_useful_pull,
                 MAX_PULLS_PER_REPO,
