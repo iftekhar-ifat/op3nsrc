@@ -1,8 +1,8 @@
 # Op3nSrc: Week 1 Task — Data Collection
 
-**Goal for this week:** download 100–200 repositories plus their issues and pull requests, and save everything as raw JSON under `data/raw/`.
+**Goal for this week:** download the repos in `data/repo_list.csv` (hand-picked by the team) plus their issues and pull requests, and save everything as raw JSON under `data/raw/`.
 
-Everyone works on their **own machine**. Nothing is pushed or shared anywhere. Once everyone has collected their part, we get together and combine it in a discussion.
+Everyone works on their **own machine**. Nothing is pushed or shared anywhere.
 
 ---
 
@@ -13,8 +13,8 @@ For each repo:
 1. Repo info — description, topics, stars, etc.
 2. README — the raw text file
 3. Issues created in the last 3 months — title + body are the text the NLP model matches on
-
 4. Pull requests in the last 3 months — tells us which developer fixed which issue
+
 Output is just a folder of JSON files, sitting on your machine.
 
 ---
@@ -51,7 +51,6 @@ All collection scripts live in the `data_collection/` folder:
 data_collection/
 ├── main.py                     # runs everything in one go (or a single step)
 ├── github_client.py            # shared API client (reads the token from .env)
-├── generate_repo_list.py       # auto-build repo_list_candidates.csv from searches
 ├── find_repos.py               # search a single query for candidate repos
 ├── collect_repos.py            # repo info + README + languages + topics
 └── collect_issues_and_prs.py   # issues + pull requests (last 3 months, filtered)
@@ -61,33 +60,19 @@ No one needs to write any code. Just use these as-is.
 
 ---
 
-## 3. Pick the repos (human decision, do this first)
+## 3. The repo list (already decided)
 
-Everything depends on this list, so agree on it before collecting. The quickest path is to auto-generate a first draft and then prune it.
+`data/repo_list.csv` was **hand-picked by the team members** — we agreed on the final list of repos together, so there's nothing to generate. Collection uses exactly this file as-is.
 
-1. Generate a candidate list from several domain searches:
+If you ever want to double-check a candidate during a team discussion, you can search with:
 
-   ```bash
-   python3 data_collection/generate_repo_list.py
-   ```
+```bash
+python3 data_collection/find_repos.py "language:python stars:>5000"
+```
 
-   This applies the keep/drop rules for you (not archived, active in last 3 months, min stars, not a tutorial/awesome-list repo, deduped across queries) and writes `data/repo_list_candidates.csv`. Tune with flags, e.g.:
+Change the query to whatever fits (e.g. `fastapi`, `django`, `react`, `go`). This is just for reference — it does not change what gets collected.
 
-   ```bash
-   python3 data_collection/generate_repo_list.py --per-query 40 --min-stars 2000
-   ```
-
-2. Or search one query at a time:
-
-   ```bash
-   python3 data_collection/find_repos.py "language:python stars:>5000"
-   ```
-
-   Change the query to whatever fits the domain (e.g. `fastapi`, `django`, `pandas`, `langchain`, `react`, `go`).
-
-3. Review the candidates and prune: keep repos that are active (updated in the last 3 months), not archived, have open issues, and fit a few focused ecosystems (e.g. Python, JavaScript/TypeScript, Go). Delete anything that doesn't fit.
-
-4. Save the final agreed list to `data/repo_list.csv`:
+Each row in `data/repo_list.csv` is one repo. Any edits you make to this file (adding/removing rows) directly change what `main.py` collects.
    ```csv
    owner,repo,full_name
    fastapi,fastapi,fastapi/fastapi
@@ -97,8 +82,7 @@ Everything depends on this list, so agree on it before collecting. The quickest 
 
 `main.py` reads from this one file, so everyone pulls the same repos.
 
-> **Splitting the work:** each of you takes a chunk of this list (e.g. 30–40 repos each). You collect your chunk on your machine; we combine everything in the discussion afterwards. No one should collect the full 100–200 alone — you'll burn through the API quota.
-> **Note for your chunk:** keep only **your** repos in `repo_list.csv` before running, so you don't collect everything.
+> **Note:** run `main.py` once over the whole list — it collects every repo in `repo_list.csv`.
 
 ---
 
@@ -130,7 +114,7 @@ python3 data_collection/collect_issues_and_prs.py
 
 Note on the issues endpoint: it returns PRs mixed in with issues. A record where `"pull_request"` is not null is actually a PR — that's expected, we filter it during cleaning in Week 2.
 
-The issues + PRs step is the slow one (big repos have thousands of issues), expect ~10–15 minutes for 150 repos. Getting rate-limited is fine — just wait a bit and rerun; it overwrites the same files.
+The issues + PRs step is the slow one (big repos have thousands of issues), expect **10–30 minutes for the full repo list** (218 repos as of now). Getting rate-limited is fine — just wait a bit and rerun; it overwrites the same files.
 
 ---
 
@@ -151,7 +135,6 @@ op3nsrc/
 └── data_collection/
     ├── main.py
     ├── github_client.py
-    ├── generate_repo_list.py
     ├── find_repos.py
     ├── collect_repos.py
     └── collect_issues_and_prs.py
@@ -165,7 +148,7 @@ ls data/raw/pulls | wc -l
 ls data/raw/repos | wc -l
 ```
 
-- Repo files match the repos you were assigned.
+- Repo files match `repo_list.csv`.
 - Pages are present for the bigger repos.
 - Open one issue file — you should see `title` and `body`.
 
@@ -187,7 +170,7 @@ A repo with genuinely no issues is fine; a repo with zero issue files otherwise 
 ## 7. Definition of Done
 
 - [ ] You have a working token and `python3 data_collection/main.py --help` runs on your machine.
-- [ ] You collected **your assigned chunk** of `repo_list.csv` (via `main.py`).
+- [ ] You collected **all of `repo_list.csv`** (via `main.py`).
 - [ ] `data/raw/{repos,readmes,issues,pulls}` are populated on your machine.
 
-Once everyone is done, we combine everything and start Week 2 (text cleaning + tables) — the plan is in `data-collection-and-processing.md`.
+Once done, we combine everything and start Week 2 (text cleaning + tables) — the plan is in `data-collection-and-processing.md`.

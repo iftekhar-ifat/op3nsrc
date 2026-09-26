@@ -104,7 +104,7 @@ The user can then directly investigate the recommended issue and decide whether 
 
 ### WEEK 1 — Data Collection & Preprocessing
 
-- Identify 100–200 relevant repositories.
+- Identify the repo set (~218 hand-picked repos in `data/repo_list.csv`).
 - Set up GitHub API access.
 - Collect repositories, issues and pull requests.
 - Store raw JSON.

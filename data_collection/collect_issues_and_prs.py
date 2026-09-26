@@ -118,7 +118,7 @@ def collect_issues_and_prs() -> int:
                 stem,
                 "pulls",
                 f"/repos/{full}/pulls",
-                {"state": "all", "per_page": 100, "sort": "created", "direction": "desc"},
+                {"state": "all", "per_page": 100, "since": SINCE, "sort": "created", "direction": "desc"},
                 _is_useful_pull,
                 MAX_PULLS_PER_REPO,
             )

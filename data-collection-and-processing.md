@@ -14,7 +14,7 @@ Read this together with:
 We collect **public** data only, in four related groups:
 
 ```text
-Repositories (only ~100–200)
+Repositories (only ~200, hand-picked)
         ↓
 Issues + Pull Requests (historical and current)
         ↓
@@ -36,19 +36,21 @@ Cleaned text documents (for the NLP model)
 
 We will **not** collect all of GitHub. We pick a bounded, relevant set:
 
-- **Size:** 100–200 active repositories.
+- **Size:** 218 active repositories (hand-picked, in `data/repo_list.csv`).
 - **Domain:** a few focused ecosystems — e.g. Python (web/AI/ML), JavaScript/TypeScript (web), Go, Rust (`fastapi`, `pandas`, `django`, `react`, `langchain`, `go`, ...).
 - **Criteria for inclusion:** not archived, has open issues, has a `good first issue` or `help wanted` label somewhere, active in the last 3 months.
 
-### How to find candidate repos
+### How the repo list was chosen
 
-Use the GitHub **search API** (one query per ecosystem/domain):
+The repos in `data/repo_list.csv` were **hand-picked by the team members** — we agreed on the final set of projects together, so no scripts or searches are needed to decide them. Collection reads this file as-is.
+
+If a discussion needs a quick reference for a candidate, search manually:
 
 ```bash
 curl -s "https://api.github.com/search/repositories?q=language:python+stars:>5000&sort=stars&order=desc&per_page=50" -H "Accept: application/vnd.github+json"
 ```
 
-Or run `python3 data_collection/generate_repo_list.py` to do this for several queries at once. Then manually review the candidates and keep the ones that fit. Save the final list in a file we all share, e.g. `data/repo_list.csv`:
+The list lives in one shared file, `data/repo_list.csv`:
 
 ```csv
 owner,repo,full_name
@@ -366,7 +368,7 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 
 ## 8. Checklist before moving on (Week 2 begins)
 
-- [ ] Repo list reviewed and saved (`data/repo_list.csv`, 100–200 repos).
+- [ ] Repo list reviewed and saved (`data/repo_list.csv`, 218 repos).
 - [ ] All raw responses collected and stored under `data/raw/`.
 - [ ] Dedup, drop archived/bots, normalize labels and languages.
 - [ ] Text cleaning applied and `final_text` column exists for every issue.
@@ -380,8 +382,8 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 
 | Task                                   | Owner (suggested)          |
 | -------------------------------------- | -------------------------- |
-| Pick + review the 100–200 repo list    | 1 person                   |
-| Write `data_collection/main.py` + the two collection scripts | 1–2 people |
+| Pick + review the 218-repo list        | 1 person                   |
+| Write `data_collection/main.py` + the collection scripts | 1–2 people |
 | Run `data_collection/main.py` and cache raw responses to `data/raw/` | whoever runs the scripts |
 | Write cleaning + text pipeline         | 1 person                   |
 | PR→issue linking + label generation    | 1 person                   |

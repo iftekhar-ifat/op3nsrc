@@ -8,7 +8,6 @@ Scripts for downloading public GitHub data for the Op3nSrc recommendation projec
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `main.py`                   | **The standard way to run collection.** Runs every step in order, or a single step with `--step`. Checks `.env` and `repo_list.csv` first. |
 | `github_client.py`          | Shared API client. Reads the token from `<project_root>/.env`. Imported by the other scripts, not run directly.                            |
-| `generate_repo_list.py`     | Auto-generates a candidate repo list from multiple domain searches, applies filters, writes to `data/repo_list_candidates.csv`.            |
 | `find_repos.py`             | Searches GitHub for candidate repositories given a single search query. Prints results so the team can build `data/repo_list.csv`.         |
 | `collect_repos.py`          | For every repo in `repo_list.csv`: downloads repo info, README, languages and topics.                                                      |
 | `collect_issues_and_prs.py` | For every repo in `repo_list.csv`: downloads issues and pull requests created in the last 3 months, page by page, with quality filters.    |
@@ -33,7 +32,7 @@ pip3 install requests python-dotenv
    ```
    GITHUB_TOKEN=ghp_your_token_here
    ```
-3. Create `data/repo_list.csv` in the project root. This file lists the repositories to collect, one per row:
+3. `data/repo_list.csv` is already created in the project root. **The repos in it were hand-picked by the team members** — everyone agreed on which projects to include. You collect exactly what's in this file, nothing else:
    ```csv
    owner,repo,full_name
    fastapi,fastapi,fastapi/fastapi
@@ -49,17 +48,15 @@ cd /Users/iftekhar/Documents/codes/op3nsrc
 
 ## Usage
 
-### 1. Find candidate repositories
+### 1. Find candidate repositories (optional)
 
-**Auto-generate a first list (recommended):**
+The repos in `data/repo_list.csv` were **hand-picked by the team members** — everyone agreed on the final list before collection started. If you want to explore which projects exist before deciding, you can search:
 
 ```bash
-python3 data_collection/generate_repo_list.py
+python3 data_collection/find_repos.py "language:python fastapi"
 ```
 
-This runs several domain queries (Python + JavaScript/TypeScript + Go + Rust), keeps archiving-friendly + recently-active + non-tutorial repos, dedupes them, and writes the result to `data/repo_list_candidates.csv` (it never overwrites `repo_list.csv` directly).
-
-Use the results to decide the final `repo_list.csv`.
+This prints candidate results; change the query to whatever fits (e.g. `react`, `django`, `go`). Use it only to *inform* decisions already made — `main.py` collects exactly what's in `repo_list.csv`, no more.
 
 ### 2. Collect everything
 
@@ -228,7 +225,7 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 
 ### How to verify your collection
 
-- **Files per repo:** for each repo in your chunk of `repo_list.csv`, you should count exactly **4 files** from `collect_repos.py` (3 in `repos/`, 1 README in `readmes/`) plus at least one issue/PR page file if the repo has activity. A repo with 0 issues/PRs in the last 3 months may have none.
+- **Files per repo:** for each repo in `repo_list.csv`, you should count exactly **4 files** from `collect_repos.py` (3 in `repos/`, 1 README in `readmes/`) plus at least one issue/PR page file if the repo has activity. A repo with 0 issues/PRs in the last 3 months may have none.
 - **File names match:** `ls data/raw/repos/` should show `<owner>__<repo>.json` plus `<owner>__<repo>__languages.json` and `<owner>__<repo>__topics.json` for each entry in your list.
 - **Content looks right:** open a file — repos should show `full_name`, `language` and `archived`; issues should show `title`, `state` and `body`; PRs should show `merged_at`.
 - **Size makes sense:** total kept records per repo should be at most **100 issues** and **50 PRs**, and each page file (except the last) should hold a full page of records.
@@ -237,9 +234,9 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 A quick spot-check command:
 
 ```bash
-ls data/raw/repos/ | wc -l        # should be 3 x (number of repos in your chunk)
-ls data/raw/issues/ | wc -l       # should be at least (number of repos in your chunk)
-ls data/raw/pulls/ | wc -l        # should be at least (number of repos in your chunk)
+ls data/raw/repos/ | wc -l        # should be 3 x (number of repos)
+ls data/raw/issues/ | wc -l       # should be at least (number of repos)
+ls data/raw/pulls/ | wc -l        # should be at least (number of repos)
 ```
 
 If a repo genuinely has no issues, having no issue page file is normal. If a repo that clearly has issues produced nothing, the script likely stopped early — check the troubleshooting table below.
@@ -251,7 +248,6 @@ The raw JSON is the input for the cleaning step (Week 2), documented in `../data
 - Authenticated requests: 5,000/hour per account.
 - Both `collect_repos.py` and `collect_issues_and_prs.py` request data in pages of `per_page=100`, which is the maximum.
 - If you hit the limit you'll get a clear error message; wait until the reset time and rerun. The scripts overwrite the same files, so rerunning is safe.
-- If the team splits the repo list, each person uses their own token, so the quota doesn't collide.
 
 ## Troubleshooting
 
