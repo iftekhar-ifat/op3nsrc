@@ -22,9 +22,11 @@ Output is just a folder of JSON files, sitting on your machine.
 ## 1. First-time setup
 
 1. Make sure Python 3.10+ is installed (`python3 --version`).
-2. Install the two libraries we need:
+2. Create the project environment and install the dependencies (from the project root):
    ```bash
-   pip3 install requests python-dotenv
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
    ```
 3. Generate a GitHub personal access token:
    - https://github.com/settings/tokens → **Generate new token (classic)**

@@ -18,8 +18,11 @@ Scripts for downloading public GitHub data for the Op3nSrc recommendation projec
 - Python 3.10+
 - A GitHub personal access token
 
+Use the project environment (see the root `README.md`):
+
 ```bash
-pip3 install requests python-dotenv pandas
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ## Setup

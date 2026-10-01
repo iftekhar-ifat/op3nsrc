@@ -1,0 +1,17 @@
+# Op3nSrc — Python 3.10+ (developed on 3.11)
+# Install:  python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+
+# data collection (data_collection/*.py)
+requests>=2.31
+python-dotenv>=1.0
+
+# cleaning + EDA (clean.py, notebooks/eda.ipynb)
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+jupyterlab>=4.0
+ipykernel>=6.29
+
+# modeling (Weeks 3–4): TF-IDF baseline + Sentence-BERT
+scikit-learn>=1.4
+sentence-transformers>=3.0

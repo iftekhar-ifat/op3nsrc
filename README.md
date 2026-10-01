@@ -5,7 +5,7 @@
 > **Recommended issue:** Add pagination to a FastAPI endpoint — **Match: 89%**
 > *Why:* your activity shows Python, FastAPI and REST APIs, and the issue is labelled `good first issue`.
 
-See [`overall-idea.md`](overall-idea.md) for the motivation and plan, and [`TODO.md`](TODO.md) for current progress.
+See [`overall-idea.md`](overall-idea.md) for the motivation and plan, and [Status](#status) below for current progress.
 
 ## Pipeline
 
@@ -21,8 +21,29 @@ ranked issue recommendations
 
 ## Quick start
 
+Create the virtual environment (Python 3.10+, one-time):
+
 ```bash
-pip3 install requests python-dotenv pandas
+python3 -m venv .venv
+```
+
+```bash
+source .venv/bin/activate
+```
+
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+python -m ipykernel install --user --name op3nsrc --display-name "Python (op3nsrc)"
+```
+
+`requirements.txt` lists the direct dependencies; `requirements-lock.txt` pins the exact versions that were tested (`pip install -r requirements-lock.txt` to reproduce exactly). Activate the environment (`source .venv/bin/activate`) in every new terminal; in Jupyter/VS Code pick the **Python (op3nsrc)** kernel.
+
+Then set up the GitHub token (only needed for collection):
+
+```bash
 cp .env.example .env            # then put your GitHub token in .env
 ```
 
@@ -64,12 +85,15 @@ Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON stri
 ```text
 op3nsrc/
 ├── README.md
-├── TODO.md                              # task list / progress
 ├── overall-idea.md                      # project idea, motivation, timeline
 ├── data-collection-task.md              # Week 1 how-to (collection)
 ├── data-collection-and-processing.md    # data model, cleaning rules, tables
 ├── nlp-recommendation.md                # model plan (TF-IDF, SBERT, evaluation)
+├── notebooks/
+│   └── eda.ipynb                        # exploratory analysis + key findings
 ├── .env.example                         # copy to .env and add your token
+├── requirements.txt                     # direct dependencies
+├── requirements-lock.txt                # exact tested versions
 ├── data/
 │   ├── repo_list.csv                    # the 202 repos (tracked in git)
 │   ├── raw/                             # raw API JSON (not in git)
@@ -87,7 +111,7 @@ op3nsrc/
 
 - [x] Week 1 — data collection (202 repos)
 - [x] Week 2 — cleaning + tables
-- [ ] Week 2 — EDA
+- [x] Week 2 — EDA (`notebooks/eda.ipynb`)
 - [ ] Weeks 3–4 — TF-IDF baseline, Sentence-BERT model, evaluation (P@K, R@K, NDCG@K, MRR)
 - [ ] Week 4 — web app
 - [ ] Week 5 — fairness, privacy, final report
