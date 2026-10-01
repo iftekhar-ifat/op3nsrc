@@ -1,0 +1,707 @@
+{
+  "_dummy": true,
+  "_note": "Fictional user for development. Each key mirrors one GitHub REST API response (see _sources).",
+  "_sources": {
+    "user": "GET /users/{username}",
+    "repos": "GET /users/{username}/repos?type=owner&sort=pushed&per_page=100",
+    "languages": "GET /repos/{owner}/{repo}/languages  (one call per repo in `repos`, keyed by full_name)",
+    "pull_requests": "GET /search/issues?q=author:{username}+type:pr+is:merged&sort=created&per_page=50",
+    "issues": "GET /search/issues?q=author:{username}+type:issue&sort=created&per_page=50",
+    "starred": "GET /users/{username}/starred?per_page=50"
+  },
+  "user": {
+    "login": "demo-alex-py",
+    "id": 100030,
+    "node_id": "U_dummy100030",
+    "avatar_url": "https://avatars.githubusercontent.com/u/100030?v=4",
+    "html_url": "https://github.com/demo-alex-py",
+    "type": "User",
+    "site_admin": false,
+    "name": "Alex (demo)",
+    "company": null,
+    "blog": "",
+    "location": "Helsinki, Finland",
+    "email": null,
+    "hireable": null,
+    "bio": "Backend developer. Python, FastAPI, PostgreSQL.",
+    "twitter_username": null,
+    "public_repos": 7,
+    "public_gists": 0,
+    "followers": 38,
+    "following": 12,
+    "created_at": "2021-02-14T10:00:00Z",
+    "updated_at": "2026-09-28T10:00:00Z"
+  },
+  "repos": [
+    {
+      "id": 100001,
+      "node_id": "R_dummy100001",
+      "name": "fastapi-todo-api",
+      "full_name": "demo-alex-py/fastapi-todo-api",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100002,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/fastapi-todo-api",
+      "description": "REST API for a todo app with FastAPI, SQLAlchemy and JWT auth",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/fastapi-todo-api",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 14,
+      "watchers_count": 14,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 3,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "fastapi",
+        "rest-api",
+        "sqlalchemy",
+        "jwt"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-20T18:12:00Z",
+      "pushed_at": "2026-09-20T18:12:00Z"
+    },
+    {
+      "id": 100003,
+      "node_id": "R_dummy100003",
+      "name": "settings-loader",
+      "full_name": "demo-alex-py/settings-loader",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100004,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/settings-loader",
+      "description": "Typed settings from env vars and .env files using pydantic",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/settings-loader",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 6,
+      "watchers_count": 6,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "pydantic",
+        "configuration",
+        "python"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-08-30T09:41:00Z",
+      "pushed_at": "2026-08-30T09:41:00Z"
+    },
+    {
+      "id": 100005,
+      "node_id": "R_dummy100005",
+      "name": "async-price-scraper",
+      "full_name": "demo-alex-py/async-price-scraper",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100006,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/async-price-scraper",
+      "description": "Async web scraper with httpx and asyncio, stores results in PostgreSQL",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/async-price-scraper",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 3,
+      "watchers_count": 3,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "asyncio",
+        "httpx",
+        "scraping",
+        "postgresql"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-07-14T21:05:00Z",
+      "pushed_at": "2026-07-14T21:05:00Z"
+    },
+    {
+      "id": 100007,
+      "node_id": "R_dummy100007",
+      "name": "django-blog",
+      "full_name": "demo-alex-py/django-blog",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100008,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/django-blog",
+      "description": "Personal blog built with Django and HTMX",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/django-blog",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "django",
+        "htmx"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2024-03-05T10:00:00Z",
+      "updated_at": "2025-11-02T15:30:00Z",
+      "pushed_at": "2025-11-02T15:30:00Z"
+    },
+    {
+      "id": 100009,
+      "node_id": "R_dummy100009",
+      "name": "pytest-snapshots-demo",
+      "full_name": "demo-alex-py/pytest-snapshots-demo",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100010,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/pytest-snapshots-demo",
+      "description": "Examples of snapshot testing with pytest",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/pytest-snapshots-demo",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "pytest",
+        "testing"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-05-10T08:00:00Z",
+      "pushed_at": "2026-05-10T08:00:00Z"
+    },
+    {
+      "id": 100011,
+      "node_id": "R_dummy100011",
+      "name": "dotfiles",
+      "full_name": "demo-alex-py/dotfiles",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100012,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/dotfiles",
+      "description": "My shell, git and neovim configuration",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-alex-py/dotfiles",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": "Shell",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-25T07:00:00Z",
+      "pushed_at": "2026-09-25T07:00:00Z"
+    },
+    {
+      "id": 100013,
+      "node_id": "R_dummy100013",
+      "name": "starlette",
+      "full_name": "demo-alex-py/starlette",
+      "private": false,
+      "owner": {
+        "login": "demo-alex-py",
+        "id": 100014,
+        "type": "User",
+        "html_url": "https://github.com/demo-alex-py"
+      },
+      "html_url": "https://github.com/demo-alex-py/starlette",
+      "description": "The little ASGI framework that shines.",
+      "fork": true,
+      "url": "https://api.github.com/repos/demo-alex-py/starlette",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "bsd-3-clause",
+        "spdx_id": "BSD-3-Clause"
+      },
+      "topics": [],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-06-01T10:00:00Z",
+      "pushed_at": "2026-06-01T10:00:00Z"
+    }
+  ],
+  "languages": {
+    "demo-alex-py/fastapi-todo-api": {
+      "Python": 48210,
+      "Dockerfile": 612,
+      "Mako": 494
+    },
+    "demo-alex-py/settings-loader": {
+      "Python": 15422
+    },
+    "demo-alex-py/async-price-scraper": {
+      "Python": 21890,
+      "SQL": 1830
+    },
+    "demo-alex-py/django-blog": {
+      "Python": 30551,
+      "HTML": 18990,
+      "CSS": 4210,
+      "JavaScript": 1220
+    },
+    "demo-alex-py/pytest-snapshots-demo": {
+      "Python": 6120
+    },
+    "demo-alex-py/dotfiles": {
+      "Shell": 8801,
+      "Lua": 5340,
+      "Vim Script": 920
+    },
+    "demo-alex-py/starlette": {
+      "Python": 412300,
+      "Shell": 1800
+    }
+  },
+  "pull_requests": {
+    "total_count": 3,
+    "incomplete_results": false,
+    "items": [
+      {
+        "url": "https://api.github.com/repos/encode/starlette/issues/2894",
+        "repository_url": "https://api.github.com/repos/encode/starlette",
+        "html_url": "https://github.com/encode/starlette/pull/2894",
+        "id": 100015,
+        "node_id": "I_dummy100015",
+        "number": 2894,
+        "title": "Fix StaticFiles returning 500 for paths with null bytes",
+        "user": {
+          "login": "demo-alex-py",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-06-02T11:00:00Z",
+        "updated_at": "2026-06-05T08:30:00Z",
+        "closed_at": "2026-06-05T08:30:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "Return 404 instead of raising when the requested path contains a null byte. Fixes #2891.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/encode/starlette/pulls/2894",
+          "html_url": "https://github.com/encode/starlette/pull/2894",
+          "merged_at": "2026-06-05T08:30:00Z"
+        }
+      },
+      {
+        "url": "https://api.github.com/repos/pydantic/pydantic/issues/11870",
+        "repository_url": "https://api.github.com/repos/pydantic/pydantic",
+        "html_url": "https://github.com/pydantic/pydantic/pull/11870",
+        "id": 100016,
+        "node_id": "I_dummy100016",
+        "number": 11870,
+        "title": "docs: clarify validation of env-prefixed nested settings",
+        "user": {
+          "login": "demo-alex-py",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [
+          {
+            "name": "documentation"
+          }
+        ],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-07-21T09:10:00Z",
+        "updated_at": "2026-07-24T16:00:00Z",
+        "closed_at": "2026-07-24T16:00:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "Adds an example for nested models in BaseSettings with env_nested_delimiter.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/pydantic/pydantic/pulls/11870",
+          "html_url": "https://github.com/pydantic/pydantic/pull/11870",
+          "merged_at": "2026-07-24T16:00:00Z"
+        }
+      },
+      {
+        "url": "https://api.github.com/repos/tiangolo/fastapi/issues/13950",
+        "repository_url": "https://api.github.com/repos/tiangolo/fastapi",
+        "html_url": "https://github.com/tiangolo/fastapi/pull/13950",
+        "id": 100017,
+        "node_id": "I_dummy100017",
+        "number": 13950,
+        "title": "Add test for dependency override with yield",
+        "user": {
+          "login": "demo-alex-py",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [
+          {
+            "name": "tests"
+          }
+        ],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-08-11T13:40:00Z",
+        "updated_at": "2026-08-15T10:00:00Z",
+        "closed_at": "2026-08-15T10:00:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "Adds a regression test for overriding dependencies that use yield in tests.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/tiangolo/fastapi/pulls/13950",
+          "html_url": "https://github.com/tiangolo/fastapi/pull/13950",
+          "merged_at": "2026-08-15T10:00:00Z"
+        }
+      }
+    ]
+  },
+  "issues": {
+    "total_count": 2,
+    "incomplete_results": false,
+    "items": [
+      {
+        "url": "https://api.github.com/repos/tiangolo/fastapi/issues/13901",
+        "repository_url": "https://api.github.com/repos/tiangolo/fastapi",
+        "html_url": "https://github.com/tiangolo/fastapi/issues/13901",
+        "id": 100018,
+        "node_id": "I_dummy100018",
+        "number": 13901,
+        "title": "OpenAPI schema missing examples for Annotated query params",
+        "user": {
+          "login": "demo-alex-py",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "open",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-07-30T12:00:00Z",
+        "updated_at": "2026-07-30T12:00:00Z",
+        "closed_at": null,
+        "author_association": "NONE",
+        "body": "When using Annotated[int, Query(examples=[...])] the examples are not shown in /docs."
+      },
+      {
+        "url": "https://api.github.com/repos/encode/httpx/issues/3490",
+        "repository_url": "https://api.github.com/repos/encode/httpx",
+        "html_url": "https://github.com/encode/httpx/issues/3490",
+        "id": 100019,
+        "node_id": "I_dummy100019",
+        "number": 3490,
+        "title": "Timeout not applied to proxy CONNECT requests",
+        "user": {
+          "login": "demo-alex-py",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-05-02T08:00:00Z",
+        "updated_at": "2026-05-20T08:00:00Z",
+        "closed_at": "2026-05-20T08:00:00Z",
+        "author_association": "NONE",
+        "body": "Setting timeout=5 does not limit the time spent on the CONNECT request to a proxy."
+      }
+    ]
+  },
+  "starred": [
+    {
+      "id": 100020,
+      "node_id": "R_dummy100020",
+      "name": "fastapi",
+      "full_name": "tiangolo/fastapi",
+      "private": false,
+      "owner": {
+        "login": "tiangolo",
+        "id": 100021,
+        "type": "User",
+        "html_url": "https://github.com/tiangolo"
+      },
+      "html_url": "https://github.com/tiangolo/fastapi",
+      "description": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+      "fork": false,
+      "url": "https://api.github.com/repos/tiangolo/fastapi",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 91000,
+      "watchers_count": 91000,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "python",
+        "api",
+        "async",
+        "fastapi",
+        "pydantic"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100022,
+      "node_id": "R_dummy100022",
+      "name": "pydantic",
+      "full_name": "pydantic/pydantic",
+      "private": false,
+      "owner": {
+        "login": "pydantic",
+        "id": 100023,
+        "type": "User",
+        "html_url": "https://github.com/pydantic"
+      },
+      "html_url": "https://github.com/pydantic/pydantic",
+      "description": "Data validation using Python type hints",
+      "fork": false,
+      "url": "https://api.github.com/repos/pydantic/pydantic",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 24000,
+      "watchers_count": 24000,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "python",
+        "validation",
+        "pydantic"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100024,
+      "node_id": "R_dummy100024",
+      "name": "ruff",
+      "full_name": "astral-sh/ruff",
+      "private": false,
+      "owner": {
+        "login": "astral-sh",
+        "id": 100025,
+        "type": "User",
+        "html_url": "https://github.com/astral-sh"
+      },
+      "html_url": "https://github.com/astral-sh/ruff",
+      "description": "An extremely fast Python linter and code formatter, written in Rust.",
+      "fork": false,
+      "url": "https://api.github.com/repos/astral-sh/ruff",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 41000,
+      "watchers_count": 41000,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "linter",
+        "python",
+        "rust"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100026,
+      "node_id": "R_dummy100026",
+      "name": "sqlalchemy",
+      "full_name": "sqlalchemy/sqlalchemy",
+      "private": false,
+      "owner": {
+        "login": "sqlalchemy",
+        "id": 100027,
+        "type": "User",
+        "html_url": "https://github.com/sqlalchemy"
+      },
+      "html_url": "https://github.com/sqlalchemy/sqlalchemy",
+      "description": "The Database Toolkit for Python",
+      "fork": false,
+      "url": "https://api.github.com/repos/sqlalchemy/sqlalchemy",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 10500,
+      "watchers_count": 10500,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "python",
+        "sql",
+        "orm"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100028,
+      "node_id": "R_dummy100028",
+      "name": "celery",
+      "full_name": "celery/celery",
+      "private": false,
+      "owner": {
+        "login": "celery",
+        "id": 100029,
+        "type": "User",
+        "html_url": "https://github.com/celery"
+      },
+      "html_url": "https://github.com/celery/celery",
+      "description": "Distributed Task Queue",
+      "fork": false,
+      "url": "https://api.github.com/repos/celery/celery",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 26000,
+      "watchers_count": 26000,
+      "language": "Python",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "python",
+        "task-queue",
+        "redis"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    }
+  ]
+}

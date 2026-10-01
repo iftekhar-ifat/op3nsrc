@@ -39,7 +39,7 @@ pip install -r requirements.txt
 3. `data/repo_list.csv` is already created in the project root. **The repos in it were hand-picked by the team members** — everyone agreed on which projects to include. You collect exactly what's in this file, nothing else:
    ```csv
    owner,repo,full_name
-   fastapi,fastapi,fastapi/fastapi
+   tiangolo,fastapi,tiangolo/fastapi
    pydantic,pydantic,pydantic/pydantic
    pandas-dev,pandas,pandas-dev/pandas
    ```
@@ -95,17 +95,17 @@ python3 data_collection/collect_issues_and_prs.py
 `collect_repos.py` saves one file per repo into `data/raw/repos/` plus the README into `data/raw/readmes/`:
 
 ```text
-data/raw/repos/fastapi__fastapi.json
-data/raw/repos/fastapi__fastapi__languages.json
-data/raw/repos/fastapi__fastapi__topics.json
-data/raw/readmes/fastapi__fastapi.md
+data/raw/repos/tiangolo__fastapi.json
+data/raw/repos/tiangolo__fastapi__languages.json
+data/raw/repos/tiangolo__fastapi__topics.json
+data/raw/readmes/tiangolo__fastapi.md
 ```
 
 `collect_issues_and_prs.py` saves page files into `data/raw/issues/` and `data/raw/pulls/`:
 
 ```text
-data/raw/issues/fastapi__fastapi__page1.json ... pageN.json
-data/raw/pulls/fastapi__fastapi__page1.json ... pageN.json
+data/raw/issues/tiangolo__fastapi__page1.json ... pageN.json
+data/raw/pulls/tiangolo__fastapi__page1.json ... pageN.json
 ```
 
 The 3-month window is set in the `SINCE` constant at the top of `collect_issues_and_prs.py`. Adjust it if needed.
@@ -136,7 +136,7 @@ data/
 
 ```csv
 owner,repo,full_name
-fastapi,fastapi,fastapi/fastapi
+tiangolo,fastapi,tiangolo/fastapi
 pydantic,pydantic,pydantic/pydantic
 ```
 
@@ -148,8 +148,8 @@ For every repo in `repo_list.csv`, running `collect_repos.py` and `collect_issue
 
 | Repo `full_name`  | Files produced                                                                                        | Where they land     |
 | ----------------- | ----------------------------------------------------------------------------------------------------- | ------------------- |
-| `fastapi/fastapi` | 4 files: `fastapi__fastapi.json`, `fastapi__fastapi__languages.json`, `fastapi__fastapi__topics.json` | `data/raw/repos/`   |
-|                   | 1 file: `fastapi__fastapi.md` (the README)                                                            | `data/raw/readmes/` |
+| `tiangolo/fastapi` | 3 files: `tiangolo__fastapi.json`, `tiangolo__fastapi__languages.json`, `tiangolo__fastapi__topics.json` | `data/raw/repos/`   |
+|                   | 1 file: `tiangolo__fastapi.md` (the README)                                                            | `data/raw/readmes/` |
 |                   | Up to 100 issues (1 or more page files) — **capped at 100 issues per repo**                           | `data/raw/issues/`  |
 |                   | Up to 50 PRs (1 or more page files) — **capped at 50 pull requests per repo**                         | `data/raw/pulls/`   |
 
@@ -158,7 +158,7 @@ So it's not "one file per repo" — it's:
 - `collect_repos.py` → **4 files per repo** (3 JSON in `repos/` + 1 README in `readmes/`).
 - `collect_issues_and_prs.py` → **a variable number of page files**, because the number depends on how many issues/PRs the repo had in the last 3 months (and caps at 100 / 50 per repo).
 
-Why the `__` in the filename? A repo name is `owner/repo`, which can't be used as a filename, so the `/` is replaced with `__`. `fastapi/fastapi` → `fastapi__fastapi`.
+Why the `__` in the filename? A repo name is `owner/repo`, which can't be used as a filename, so the `/` is replaced with `__`. `tiangolo/fastapi` → `tiangolo__fastapi`.
 
 ### Understanding the page files
 
@@ -170,7 +170,7 @@ The GitHub API returns at most **100 records per request**. Collection also **ca
 
 Each page file is a JSON **array** starting with `[`, so a `page1.json` for a big repo will contain up to 100 issue records. Don't worry if you see a huge file — more records is normal.
 
-Also note: GitHub returns pull requests inside the issues endpoint too. A record that has a non-null `"pull_request"` key is actually a PR, not an issue. That's expected — the cleaning step (Week 2) separates them.
+Also note: GitHub returns pull requests inside the issues endpoint too. A record that has a non-null `"pull_request"` key is actually a PR, not an issue. The collector already drops them, and `clean.py` checks again.
 
 ### Why we store JSON and not CSV for the raw data
 
@@ -178,7 +178,7 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 
 ### Sample output (what to see when you open a file)
 
-`data/raw/repos/fastapi__fastapi.json` (shortened):
+`data/raw/repos/tiangolo__fastapi.json` (shortened):
 
 ```json
 {
@@ -195,7 +195,7 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 }
 ```
 
-`data/raw/issues/fastapi__fastapi__page1.json` — an array of records; each one looks like (shortened):
+`data/raw/issues/tiangolo__fastapi__page1.json` — an array of records; each one looks like (shortened):
 
 ```json
 [
@@ -214,7 +214,7 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 ]
 ```
 
-`data/raw/pulls/fastapi__fastapi__page1.json` — an array of PR records; each one looks like (shortened):
+`data/raw/pulls/tiangolo__fastapi__page1.json` — an array of PR records; each one looks like (shortened):
 
 ```json
 [
@@ -280,7 +280,6 @@ Runs offline in ~10 s, never modifies `data/raw/`, and rewrites `data/cleaned/`:
 | `issues.csv`                | issue                             | `issue_id`, `final_text`, `labels`, `is_beginner_friendly`, `is_help_wanted`, `state`, `created_in_window`, `linked_pr_ids` |
 | `pull_requests.csv`         | merged PR                         | `pr_id`, `author_login`, `closes_issue_ids`, `references_issue_ids`, `link_verified` |
 | `developer_profiles.csv`    | PR author                         | `developer_id`, `languages`, `topics`, `pr_titles`, `experience_text`, `merged_pr_count` |
-| `developer_issue_pairs.csv` | (developer, issue) pair           | `label` (1 = merged PR closed it, 0 = sampled negative), `event_time`        |
 
 What it does:
 
@@ -288,8 +287,7 @@ What it does:
 - **Bots removed:** GitHub `type: Bot` accounts (e.g. Copilot), logins ending in `bot`/`robot`, and CI reporters (`cockroach-teamcity`, `elasticsearchmachine`, `GordonTheTurtle`).
 - **Text:** strips issue-template comments and checklists, code blocks, inline code, images, HTML, URLs and markdown syntax; lowercases. `final_text` = title + body (title alone if the body is empty). No stemming/stopwords — the TF-IDF model does that itself.
 - **Labels:** lowercased, emoji removed; beginner/help-wanted flags catch variants like `e-easy`, `good-first-issue`, `first-contribution`, `status: help wanted`.
-- **PR → issue links:** GitHub closing keywords (`close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`) with `#N`, `owner/repo#N` or a full issue URL. `refs #N` is kept as a reference only, not as a positive label.
-- **Negatives:** 5 per positive, sampled (seed 42) from issues that were open when the developer's PR was created.
+- **PR → issue links:** GitHub closing keywords (`close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`) with `#N`, `owner/repo#N` or a full issue URL. `refs #N` is kept as a reference only, not as a closing link.
 
 Read the tables with:
 
@@ -298,6 +296,4 @@ import json, pandas as pd
 issues = pd.read_csv("data/cleaned/issues.csv", keep_default_na=False)
 issues["labels"] = issues["labels"].map(json.loads)
 ```
-
-> ⚠️ `experience_text` uses **all** of a developer's PRs. For model evaluation, rebuild profiles from PRs before the split date (`event_time` in the pairs table) to avoid leaking the answer.
 

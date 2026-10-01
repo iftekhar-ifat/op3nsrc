@@ -23,12 +23,12 @@ Developer profiles (from PR authors)
 Cleaned text documents (for the NLP model)
 ```
 
-| Data group         | Why we need it                                                                                     |
-| ------------------ | -------------------------------------------------------------------------------------------------- |
-| Repositories       | Context of each issue, plus project description/README/topics (developer-side and issue-side text) |
-| Issues             | The items we recommend (title + body are NLP inputs)                                               |
-| Pull requests      | Historical positive labels (merged PR linked to an issue) and developer experience text            |
-| Developer profiles | The developer-side text document used for matching                                                 |
+| Data group         | Why we need it                                                                               |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| Repositories       | Project description/README/topics: context for issues and the "Why" explanations             |
+| Issues             | The items we recommend (title + body are NLP inputs)                                         |
+| Pull requests      | Developer text and labels for the repo classifier (which repo each developer contributes to) |
+| Developer profiles | Summary per PR author (languages, topics, PR titles); used in EDA                            |
 
 ---
 
@@ -54,7 +54,7 @@ The list lives in one shared file, `data/repo_list.csv`:
 
 ```csv
 owner,repo,full_name
-fastapi,fastapi,fastapi/fastapi
+tiangolo,fastapi,tiangolo/fastapi
 pydantic,pydantic,pydantic/pydantic
 pandas-dev,pandas,pandas-dev/pandas
 ```
@@ -73,7 +73,7 @@ Workflow: we are allowed **5,000 requests/hour** with an authenticated token, an
 
 ### Set up the API client
 
-Minimal setup so everyone is consistent:
+Simplified sketch of the idea (the real client, `data_collection/github_client.py`, also waits on rate limits and retries network errors):
 
 ```python
 # github_client.py
@@ -135,8 +135,8 @@ GET /repos/{owner}/{repo}/topics        (header: Accept: application/vnd.github.
 Store each raw response as one JSON file:
 
 ```text
-data/raw/repos/fastapi__fastapi.json
-data/raw/readmes/fastapi__fastapi.md
+data/raw/repos/tiangolo__fastapi.json
+data/raw/readmes/tiangolo__fastapi.md
 ```
 
 ### 4.2 Issues
@@ -167,11 +167,11 @@ GET /repos/{owner}/{repo}/issues?state=all&per_page=100&since=2026-06-24T00:00:0
 Note:
 
 - If `pull_request` is present, it is **not an issue** — skip it (or store separately as a PR).
-- Store raw: `data/raw/issues/fastapi__fastapi_page1.json`, etc.
+- Store raw: `data/raw/issues/tiangolo__fastapi__page1.json`, etc.
 
-### 4.3 Issue comments (optional but useful)
+### 4.3 Issue comments (optional — not collected)
 
-Comments add developer context. Fetch for issues that will become training/recommendation candidates:
+Comments could add context, but we did **not** collect them (not needed by the current models):
 
 ```
 GET /repos/{owner}/{repo}/issues/{number}/comments
@@ -203,16 +203,16 @@ GET /repos/{owner}/{repo}/pulls?state=all&per_page=100&sort=created&direction=de
 }
 ```
 
-Extra calls you may need (they cost API quota, so do them only for collected PRs):
+Extra per-PR calls (**not collected** — the PR list endpoint already gives title, body, author and merge date, which is all the models use):
 
 ```
 GET /repos/{owner}/{repo}/pulls/{number}/files     -> changed file paths
 GET /repos/{owner}/{repo}/pulls/{number}/commits   -> commit messages
 ```
 
-### 4.5 Link PRs to issues (important for labels)
+### 4.5 Link PRs to issues
 
-We need to know which PR "solved" which issue. Two ways:
+We record which PR "solved" which issue (used for `linked_pr_ids`, `link_verified` and to keep only PRs that reference an issue). Two ways:
 
 1. **From PR text:** look for `Fixes #942`, `Closes #942`, `Resolves #942` in the PR body; a PR can link multiple issues.
 2. **From PR details:** `GET /repos/{owner}/{repo}/pulls/{number}` returns `"body"` and the API sometimes exposes `"head"`/`"base"` only — so the regex on the body is the reliable way.
@@ -228,7 +228,7 @@ LINK = re.compile(r"(?:fixes|closes|resolves|refs)\s+#(\d+)", re.IGNORECASE)
 links = [int(m) for m in LINK.findall(pr["body"])]       # e.g. [942]
 ```
 
-A **merged** PR that links issue `#942` gives us a positive label: `(developer, issue_942, merged=True)`.
+A **merged** PR that links issue `#942` tells us the PR author worked on that repo — the classifier's label is the repo each developer merged most PRs into (see `nlp-recommendation.md` §4).
 
 ---
 
@@ -240,14 +240,12 @@ data/
 │   ├── repos/
 │   ├── readmes/
 │   ├── issues/               # one JSON file per page (per repo)
-│   ├── pulls/
-│   └── comments/
+│   └── pulls/
 ├── cleaned/                  # processed tables (CSV/Parquet)
 │   ├── repositories.csv
 │   ├── issues.csv
 │   ├── pull_requests.csv
-│   ├── developer_profiles.csv
-│   └── developer_issue_pairs.csv
+│   └── developer_profiles.csv
 └── repo_list.csv             # hand-picked repo list
 ```
 
@@ -339,7 +337,7 @@ pr_119,repo_001,119,"Implement endpoint pagination","adds limit offset query par
 
 ### 7.4 `developer_profiles.csv`
 
-One row per developer. The `experience_text` is the **developer-side document** for the NLP model:
+One row per developer, used for **EDA** (the classifier builds its own developer text from `pull_requests.csv`, see §7.5):
 
 ```csv
 developer_id,login,languages,topics,featured_repo_descs,pr_titles,issue_titles,experience_text,merged_pr_count,contrib_count,first_contribution_at
@@ -354,29 +352,23 @@ implement endpoint pagination | update docs for pagination |
 add pagination to endpoint
 ```
 
-### 7.5 `developer_issue_pairs.csv` — the training/recommendation input
+### 7.5 Classifier dataset (built in code, not a CSV)
 
-One row per developer–issue pair. **Positive label = merged PR linking that issue.**
-
-```csv
-developer_id,issue_id,pair_text_score_features...,label,label_source
-dev_001,issue_942,...,1,merged_pull_request
-dev_001,issue_517,...,0,unobserved_negative
-```
-
-Negative examples are sampled issues the developer did **not** contribute to (made available before the issue closed). Treat them as **assumed-negative**, not confirmed refusals.
+The repo classifier (`recommender/classification.py`) builds its training data from `pull_requests.csv`:
+one row per developer, **text** = their merged-PR titles + bodies, **label** = the repo they merged most
+PRs into. See `nlp-recommendation.md` §5.
 
 ---
 
 ## 8. Checklist before moving on (Week 2 begins)
 
-- [ ] Repo list reviewed and saved (`data/repo_list.csv`, 202 repos).
-- [ ] All raw responses collected and stored under `data/raw/`.
-- [ ] Dedup, drop archived/bots, normalize labels and languages.
-- [ ] Text cleaning applied and `final_text` column exists for every issue.
-- [ ] PR-to-issue links extracted and verified.
-- [ ] `developer_profiles.csv` built with `experience_text`.
-- [ ] Cleaned tables load in pandas with no unexpected missing values.
+- [x] Repo list reviewed and saved (`data/repo_list.csv`, 202 repos).
+- [x] All raw responses collected and stored under `data/raw/`.
+- [x] Dedup, drop archived/bots, normalize labels and languages.
+- [x] Text cleaning applied and `final_text` column exists for every issue.
+- [x] PR-to-issue links extracted and verified.
+- [x] `developer_profiles.csv` built with `experience_text`.
+- [x] Cleaned tables load in pandas with no unexpected missing values.
 
 ---
 
@@ -388,7 +380,7 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 | Write `data_collection/main.py` + the collection scripts             | 1–2 people               |
 | Run `data_collection/main.py` and cache raw responses to `data/raw/` | whoever runs the scripts |
 | Write cleaning + text pipeline                                       | 1 person                 |
-| PR→issue linking + label generation                                  | 1 person                 |
+| PR→issue linking                                                     | 1 person                 |
 | EDA notebooks on cleaned tables                                      | 1 person (Week 2)        |
 
-Everyone should be able to rerun the pipeline locally and get the same 5 tables at the end.
+Everyone should be able to rerun the pipeline locally and get the same 4 tables at the end.

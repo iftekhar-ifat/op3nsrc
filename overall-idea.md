@@ -30,37 +30,71 @@ The main needs we aim to address are:
 
 ## CORE IDEA
 
-The system analyzes a developer's technical profile and matches it with open-source issues.
+The system analyzes a developer's technical profile and matches it with open-source projects and their issues.
 
 Instead of simply showing popular repositories, it answers:
 
-> **"Which open-source issues are a good match for me?"**
+> **"Which open-source projects, and which issues in them, are a good match for me?"**
 
-For example:
+**In one sentence:** the user enters their **GitHub username**, and Op3nSrc recommends the
+**open-source projects (repos) that fit their skills**, plus **specific open issues inside each project**
+they could start with.
 
-> **Recommended issue:** Add pagination to a FastAPI endpoint  
-> **Match:** 89%  
-> **Why:** Your GitHub activity indicates experience with Python, FastAPI and REST APIs. The issue is also labelled `good first issue`.
-
-This can reduce the time spent searching and help developers make more confident contributions.
-
-The overall pipeline is:
+What the user sees:
 
 ```text
-GitHub public data (repositories, issues, pull requests, developer activity)
-        ↓
-Preprocessing + feature engineering
-        ↓
-Recommendation model
-        ↓
-Ranked, personalized issue recommendations
-        ↓
-Interactive web application for developers
+Enter GitHub username: [ octocat ]  → Find matches
+
+1. litestar-org/litestar
+   Why: sqlalchemy, pydantic, openapi, pytest
+   Issues to start with:
+     • #2118 Enhancement: Revoke jwt token          good first issue, help wanted
+     • #2015 Support for typing the `query` keyword good first issue, help wanted
+     • #3362 Docs: move code-block directives …     help wanted
+
+2. celery/celery
+   …
+(top 5 repos, 3 issues each)
 ```
 
-### Approach A — NLP-based recommendation
+### How it works
 
-Uses standard NLP techniques such as **TF-IDF** and small pretrained models (e.g. **Sentence-BERT / BERT embeddings**) to represent issue and developer text, then matches developers to issues using textual and semantic similarity.
+```text
+GitHub username
+        ↓  1. Fetch the user's public GitHub data (profile, own repos, languages,
+        ↓     recent PRs/issues, starred repos) → one profile text
+        ↓  2. A text classifier predicts which of our repos fit the profile → top 5 repos
+        ↓  3. Inside each of those repos, rank its open issues by text similarity to the profile
+        ↓     (small boost for `good first issue` / `help wanted`) → top 3 issues
+        ↓  4. Explain each match with the shared words ("Why: …")
+Top 5 repos × 3 issues, shown in a simple web app
+```
+
+**The ML model is a standard text classifier:** _developer profile text → repo_. It is trained on the
+developers in our data (their merged-PR text → the repo they contribute to). We compare standard
+models — TF-IDF + Naive Bayes, TF-IDF + Logistic Regression, Sentence-BERT embeddings + Logistic
+Regression — against a "most frequent repo" baseline. Issue ranking inside a repo (step 3) is a simple
+TF-IDF similarity used for display; it is not a separately evaluated model.
+
+### Scope decisions
+
+- **Recommendation pool:** only the **202 repos** in `data/repo_list.csv` and their issues, not all of GitHub.
+- **Data snapshot:** issues are from the **2026-10-01** collection; we do not re-check live whether an
+  issue has been closed since.
+- **No special handling** of repos the user already contributes to: they are ranked like any other repo.
+- **User data:** until the live GitHub fetch is built, the app uses **dummy users** stored in exactly the
+  format the GitHub API returns (`dummy_users/`), so swapping in the live fetch changes nothing
+  else.
+
+### How we show it works
+
+A standard ML evaluation: one row per developer (profile text, repo), a **stratified random 80/20
+train/test split**, model choice by cross-validation on the training set, and on the test set:
+**accuracy**, **top-5 accuracy** (the true repo is among the 5 we would recommend) and **F1**.
+
+### Approach — NLP-based recommendation
+
+Uses standard NLP techniques — **TF-IDF** and a small pretrained model (**Sentence-BERT**) — to represent developer text, a standard classifier to predict fitting repos, and text similarity to pick issues inside them.
 
 → See **`nlp-recommendation.md`** for the full model implementation plan.
 
@@ -72,7 +106,7 @@ Uses standard NLP techniques such as **TF-IDF** and small pretrained models (e.g
 
 The primary added value is **reducing the gap between developers who want to contribute and open-source projects that need contributors**.
 
-Instead of searching through thousands of issues, users receive a ranked shortlist of issues relevant to their skills and interests.
+Instead of searching through hundreds of projects and thousands of issues, users receive a short list of projects that fit their skills, each with concrete issues to start on.
 
 Potential benefits include:
 
@@ -85,18 +119,18 @@ Potential benefits include:
 The recommendation is converted into an actionable outcome for the end-user:
 
 ```text
-Developer profile + open issues
+GitHub username → developer profile
         ↓
 Recommendation model
         ↓
-Compatibility score
+Ranked repos (classifier)
         ↓
-Ranked issues
+Open issues in each, ranked by text similarity
         ↓
 Actionable contribution opportunities
 ```
 
-The user can then directly investigate the recommended issue and decide whether to contribute.
+The user can then open the recommended project and issues directly and decide whether to contribute.
 
 ---
 
@@ -116,13 +150,13 @@ The user can then directly investigate the recommended issue and decide whether 
 - Explore contribution patterns.
 - Build initial visualizations.
 
-### WEEKS 3–4 — Modeling
+### WEEKS 3–4 — Modeling & App
 
-- Build the TF-IDF baseline recommendation model.
-- Build the Sentence-BERT embedding-based recommendation model (see `nlp-recommendation.md`).
-- Evaluate with Precision@K, Recall@K, NDCG@K and MRR.
-- Compare the embedding model against the TF-IDF baseline.
-- Integrate the chosen model into the web application.
+- Build the dataset (one row per developer: profile text → repo) and a stratified train/test split.
+- Train standard classifiers: TF-IDF + Naive Bayes / Logistic Regression, Sentence-BERT + Logistic Regression.
+- Evaluate with accuracy, top-5 accuracy and F1 against a most-frequent-repo baseline.
+- Rank open issues inside the recommended repos with TF-IDF similarity.
+- Build the user profile from (dummy) GitHub data and integrate the chosen model into the web application.
 
 ### WEEK 5 — Fairness, Privacy & Finalization
 

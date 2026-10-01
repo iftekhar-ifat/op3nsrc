@@ -1,235 +1,107 @@
-# Op3nSrc: NLP-Based Recommendation Plan
+# Op3nSrc: NLP / Model Plan
 
-This document describes the **NLP-based** implementation of Op3nSrc. It uses standard NLP techniques — **TF-IDF** and small pretrained models such as **Sentence-BERT / BERT** — to represent the text of issues, repositories and developer profiles, and recommends issues based on textual and semantic similarity.
-
-The high-level idea shared with the team is described in **`overall-idea.md`**, and the step-by-step data collection/processing workflow is in **`data-collection-and-processing.md`**.
+How Op3nSrc turns text into recommendations. The overall idea is in **`overall-idea.md`**, data
+collection and cleaning in **`data-collection-and-processing.md`**, and a full walkthrough in
+**`PROJECT_OVERVIEW.md`**.
 
 ---
 
 ## 1. Approach
 
-### 1. Content-based text similarity
-
-Represent the developer's technical experience and each open issue as text, then rank issues by similarity to the developer profile.
+Two steps, both based on text:
 
 ```text
-Developer experience text (repos, descriptions, commit messages)
-                ↕
-             Text model (TF-IDF or Sentence-BERT)
-                ↕
-          Issue title + body
-                ↕
-           Similarity score
-                ↕
-            Ranked issues
+Developer profile text
+        ↓  (1) text classifier: which repos fit this developer?      ← the ML model, evaluated
+Top 5 repos
+        ↓  (2) text similarity: which open issues in each repo fit?  ← simple ranking, for display
+Top 3 issues per repo + "Why" (shared words)
 ```
 
-This allows the system to match developers and issues even when they do not share the exact same keywords.
+1. **Repo recommendation = text classification.** Input: a developer's text. Output: a probability for
+   each repo; the 5 highest are recommended. Trained on the developers in our data.
+2. **Issue suggestions = text similarity.** Inside each recommended repo, open issues are ranked by
+   TF-IDF cosine similarity to the developer's text, with a small boost for `good first issue` /
+   `help wanted`. This step is not trained or evaluated separately.
 
-For example:
+## 2. Text used
 
-> Developer: "REST API development"
+| Text                          | Built from                                                                                                                                                     | Used in                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| **Developer text (training)** | the developer's merged-PR titles + bodies (first 500 chars each); owner names and `owner/repo` strings removed so the label is not given away                  | classifier training / test       |
+| **Developer text (app)**      | the user's GitHub data: bio, own repos (forks skipped: name, description, topics, language), top languages by bytes, merged-PR and issue titles, starred repos | classifier input + issue ranking |
+| **Repo text**                 | name, primary language, topics, description, first 5,000 chars of the README                                                                                   | "Why" explanations               |
+| **Issue text**                | title + cleaned body (`final_text`) + the repo's name/language/topics/description                                                                              | issue ranking + "Why"            |
 
-could match:
+Cleaning (see `data-collection-and-processing.md` §6): code blocks, inline code, URLs, images, HTML,
+issue-template comments/checklists and markdown syntax removed; lowercase. No stemming — TF-IDF's
+stop-word list and `max_df` handle common words.
 
-> Issue: "Implement pagination for HTTP endpoints"
+## 3. Models (all standard, `recommender/models.py`)
 
-even if the word "REST" does not appear in the issue, because a pretrained embedding model understands that the two texts are semantically related.
+| Model                               | How it represents text                                                                     | Classifier                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| Baseline                            | —                                                                                          | always predicts the most frequent repo (`DummyClassifier`) |
+| **TF-IDF + Naive Bayes**            | `TfidfVectorizer` (unigrams, English stop words, `sublinear_tf`, `min_df=2`, `max_df=0.5`) | `ComplementNB`                                             |
+| TF-IDF + Logistic Regression        | same TF-IDF                                                                                | `LogisticRegression`                                       |
+| Sentence-BERT + Logistic Regression | pretrained `all-MiniLM-L6-v2` sentence embeddings (384-d)                                  | `LogisticRegression`                                       |
 
-### 2. Models we plan to use
+- **TF-IDF** weights words by how specific they are: rare words like `tokio` or `pydantic` count far
+  more than `bug` or `error`.
+- **Sentence-BERT** encodes the meaning of a text; it needs no training (pretrained).
+- The TF-IDF `max_df=0.5` drops words that appear in more than half of the documents, such as issue-template
+  headings ("expected behavior", "steps to reproduce").
 
-Two tiers of NLP models, both small and standard:
+## 4. Learning setup
 
-#### A. TF-IDF baseline (no pretrained model needed)
+|              |                                                                                   |
+| ------------ | --------------------------------------------------------------------------------- |
+| One row      | one developer                                                                     |
+| Label        | the repo they merged most PRs into                                                |
+| Classes      | repos with ≥ 5 developers → **117 repos, 1,724 developers**                       |
+| Split        | stratified random **80 / 20** train / test (`random_state = 42`)                  |
+| Model choice | 4-fold stratified cross-validation on the training set                            |
+| Final model  | the CV winner (**TF-IDF + Naive Bayes**), retrained on all developers for the app |
 
-- Use `TfidfVectorizer` (e.g. from scikit-learn) on issue titles/bodies and developer experience text.
-- Compute cosine similarity between developer text vectors and issue vectors.
-- Fast, fully offline, and a transparent baseline for comparison.
+Rows are independent (each developer appears once), so a standard random split is valid.
 
-#### B. Small pretrained embeddings (BERT-based)
+## 5. Evaluation
 
-- Use a small Sentence-BERT model such as **`all-MiniLM-L6-v2`** to embed:
-  - Issue title and body.
-  - Developer experience text (repositories, topics, descriptions).
-- Compare vectors with cosine similarity.
-- Captures semantic meaning, so synonyms and paraphrases still match.
-- Optionally combine sentence embeddings with single-vector BERT `CLS` pooling for shorter texts.
+Standard classification metrics on the test set (`notebooks/classification.ipynb`,
+`results/test_results.csv`):
 
-#### C. Optional: clustering of issues
+| Model                               | Accuracy | Top-5 accuracy | Macro F1 |
+| ----------------------------------- | -------- | -------------- | -------- |
+| Most frequent repo (baseline)       | 0.02     | 0.06           | 0.00     |
+| **TF-IDF + Naive Bayes**            | 0.51     | **0.73**       | 0.36     |
+| TF-IDF + Logistic Regression        | 0.53     | 0.70           | 0.35     |
+| Sentence-BERT + Logistic Regression | 0.44     | 0.68           | 0.31     |
 
-- Apply K-Means or HDBSCAN on the TF-IDF or embedding vectors to group issues into themes (e.g. backend/API, ML, frontend, documentation, DevOps, testing).
-- Cluster assignments can be used to filter candidates before ranking or to visualize the issue ecosystem.
+- **Accuracy:** the exact repo is the top prediction.
+- **Top-5 accuracy:** the true repo is among the 5 recommended — what the app shows.
+- **Macro F1:** average quality per repo (small repos count as much as big ones).
 
----
-
-## 2. Data collection
-
-The same GitHub data sources described in **`data-collection-and-processing.md`** are used, with extra emphasis on **text fields**, since the NLP models consume text.
-
-### A. Repository table
-
-One row per repository. Text fields used by the NLP models are marked.
-
-| Field              | Example                     | Kept as model text? |
-| ------------------ | --------------------------- | ------------------- |
-| `repository_id`    | `repo_001`                  | No                  |
-| `github_full_name` | `fastapi/fastapi`           | No                  |
-| `description`      | `A modern web framework...` | **Yes**             |
-| `readme_text`      | Cleaned README text         | **Yes**             |
-| `primary_language` | `Python`                    | No                  |
-| `languages`        | `Python, HTML, Shell`       | No                  |
-| `topics`           | `api, web, asyncio`         | **Yes**             |
-| `stars`            | `78000`                     | No                  |
-| `forks`            | `6200`                      | No                  |
-| `open_issue_count` | `410`                       | No                  |
-| `is_archived`      | `false`                     | No                  |
-| `created_at`       | `2018-12-01`                | No                  |
-| `updated_at`       | `2026-09-08`                | No                  |
-| `collected_at`     | `2026-09-10`                | No                  |
-
-### B. Issue table
-
-One row per issue. The title and body are the primary NLP inputs.
-
-| Field                     | Example                         | Kept as model text? |
-| ------------------------- | ------------------------------- | ------------------- |
-| `issue_id`                | `issue_942`                     | No                  |
-| `github_issue_number`     | `942`                           | No                  |
-| `repository_id`           | `repo_001`                      | No                  |
-| `title`                   | `Add pagination to endpoint`    | **Yes**             |
-| `body`                    | Cleaned issue description       | **Yes**             |
-| `labels`                  | `enhancement, good first issue` | No                  |
-| `state`                   | `open`                          | No                  |
-| `created_at`              | `2026-05-02`                    | No                  |
-| `closed_at`               | `null`                          | No                  |
-| `comment_count`           | `6`                             | No                  |
-| `author_id`               | `user_456`                      | No                  |
-| `linked_pull_request_ids` | `pr_119`                        | No                  |
-| `is_pull_request`         | `false`                         | No                  |
-| `collected_at`            | `2026-09-10`                    | No                  |
-
-### C. Pull-request table
-
-PR titles and bodies contribute to the developer's experience text and to historical labels.
-
-| Field             | Example                         | Kept as model text? |
-| ----------------- | ------------------------------- | ------------------- |
-| `pull_request_id` | `pr_119`                        | No                  |
-| `repository_id`   | `repo_001`                      | No                  |
-| `author_id`       | `user_789`                      | No                  |
-| `linked_issue_id` | `issue_942`                     | No                  |
-| `title`           | `Implement endpoint pagination` | **Yes**             |
-| `body`            | PR description                  | **Yes**             |
-| `state`           | `closed`                        | No                  |
-| `merged`          | `true`                          | No (training label) |
-| `created_at`      | `2026-05-10`                    | No                  |
-| `merged_at`       | `2026-05-15`                    | No                  |
-| `commit_count`    | `4`                             | No                  |
-| `changed_files`   | `5`                             | No                  |
-| `additions`       | `120`                           | No                  |
-| `deletions`       | `30`                            | No                  |
-| `labels`          | `enhancement`                   | No                  |
-| `collected_at`    | `2026-09-10`                    | No                  |
-
-### D. Developer profile text
-
-For each developer, assemble an **experience text document** from public information:
-
-- Repository names, descriptions and topics.
-- Issue and PR titles/bodies they wrote.
-- Project languages (as text tokens).
-
-This document becomes the developer-side input to the similarity model.
-
----
-
-## 3. Preprocessing for NLP
-
-The text preprocessing pipeline:
+## 6. Issue ranking inside a repo (`recommender/recommend.py`)
 
 ```text
-Raw text (issue body, README, descriptions)
-    ↓
-Strip HTML / Markdown formatting
-    ↓
-Remove code blocks and URLs
-    ↓
-Normalize whitespace, lowercase
-    ↓
-Tokenize, remove stopwords
-    ↓
-Stem/lemmatize (for TF-IDF only; not needed for pretrained embeddings)
-    ↓
-Clean text for embedding / vectorization
+score(issue) = cosine(TF-IDF(developer text), TF-IDF(issue text)) + 0.05 × [good first issue or help wanted]
 ```
 
-Additional steps:
+Only **open** issues from the 2026-10-01 snapshot are considered; repos without open issues are never
+recommended. Titles that are only a template (e.g. "Bug:") are shown with the start of the body.
 
-- For TF-IDF: unigrams and bigrams, with a controlled vocabulary size (e.g. top 5,000 terms) to keep vectors manageable.
-- For Sentence-BERT: pass cleaned sentences/paragraphs through the tokenizer; no manual vocabulary is needed.
-- Handle very short or empty issue bodies by falling back to the title text.
-- Keep raw text stored separately for reproducibility; only cleaned text feeds the models.
+## 7. Limitations
 
----
+- Training text (PRs) differs from app text (own repos, starred projects), so live recommendations are
+  less reliable than the test numbers.
+- Only the 117 repos with ≥ 5 developers can be recommended.
+- Issue suggestions are not evaluated; they are a convenience step.
+- Data is dominated by Python, Go, Rust and JS/TS projects (see `notebooks/eda.ipynb`).
 
-## 4. Feature construction
+## 8. Timeline
 
-The final representation for matching:
-
-```text
-Developer Text
-        ↓ TF-IDF / Sentence-BERT
-Developer vector
-
-Issue Text (title + body + repo topics)
-        ↓ TF-IDF / Sentence-BERT
-Issue vector
-```
-
-Similarity score per pair (cosine similarity):
-
-```text
-score(developer, issue) = cosine(dev_vector, issue_vector)
-```
-
-Optional hybrid features that remain simple and standard:
-
-- Label boost: add a small bonus for `good first issue` / `help wanted`.
-- Repository activity bonus from structured metadata.
-- These are combined with the text similarity as a weighted score, not a learned model.
-
----
-
-## 5. Learning / ranking setup
-
-- **Baseline:** TF-IDF cosine similarity ranking.
-- **Advanced:** Sentence-BERT embedding cosine similarity ranking.
-- **Optional:** K-Means / HDBSCAN clustering on the same vectors for issue segmentation.
-
-Since the main signals are similarities (not time-indexed), validation still uses a **chronological split** to avoid leaking future information:
-
-```text
-Older issues and contributions  -> training set
-More recent issues              -> validation set
-Newest issues                   -> test set
-```
-
-## 6. Evaluation
-
-Metrics (same as the standard-ML approach, so both can be compared fairly):
-
-- Precision@K
-- Recall@K
-- NDCG@K
-- Mean Reciprocal Rank (MRR)
-- Hit Rate@K
-
-Report results for `K = 5` and `K = 10`, with the number of candidate issues and profiles available.
-
-## 7. Timeline
-
-- **Week 1:** Collect repositories, issues, PRs and developer text fields.
-- **Week 2:** Text preprocessing and EDA (issue text lengths, topic distributions, label distributions).
-- **Week 3:** TF-IDF baseline; cosine-similarity ranking.
-- **Week 4:** Sentence-BERT embeddings; compare against TF-IDF; optional clustering.
-- **Week 5:** Final evaluation, fairness/privacy review, integration into the web app.
+- **Week 1:** Data collection (202 repos, issues, merged PRs).
+- **Week 2:** Cleaning, tables, EDA.
+- **Week 3:** Classifier dataset, train/test split, models, evaluation; recommender demo with dummy users.
+- **Week 4:** Web page; live GitHub fetch (replacing dummy users).
+- **Week 5:** Fairness / privacy review, report and presentation.

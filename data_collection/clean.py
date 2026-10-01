@@ -6,10 +6,9 @@ Run (offline, no GitHub access needed):
 Reads  data/repo_list.csv + data/raw/{repos,readmes,issues,pulls}/
 Writes data/cleaned/
     repositories.csv           one row per repo
-    issues.csv                 one row per issue (final_text = NLP input)
+    issues.csv                 one row per issue (final_text = cleaned title + body)
     pull_requests.csv          one row per merged PR that links an issue
-    developer_profiles.csv     one row per PR author (experience_text = NLP input)
-    developer_issue_pairs.csv  positive + sampled negative (developer, issue) pairs
+    developer_profiles.csv     one row per PR author (summary used in EDA)
 
 Conventions:
     - repo_id  = name in repo_list.csv ("owner/repo"). Some repos were renamed
@@ -23,7 +22,6 @@ Conventions:
 
 import csv
 import json
-import random
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -37,8 +35,6 @@ OUT = ROOT / "data" / "cleaned"
 
 SINCE = "2026-06-24T00:00:00Z"   # collection window start (same as collector)
 README_MAX_CHARS = 20_000        # long READMEs add little beyond the intro
-NEGATIVES_PER_POSITIVE = 5
-SEED = 42
 
 # ---------------------------------------------------------------------------
 # Text cleaning (data-collection-and-processing.md §6.2)
@@ -317,12 +313,7 @@ def add_issue_links(issues, prs):
 
 
 def build_developer_profiles(prs, issues, repos):
-    """One row per PR author; experience_text is the developer-side document.
-
-    NOTE (leakage): experience_text uses ALL of a developer's PRs. For
-    evaluation, rebuild the profile from PRs before the split date only;
-    the per-PR columns needed for that are in pull_requests.csv.
-    """
+    """One row per PR author; experience_text summarises their contributions (used in EDA)."""
     repo_info = repos.set_index("repo_id")
     issues_by_author = issues.groupby("author_login")["title_clean"].apply(list)
     rows = []
@@ -367,56 +358,6 @@ def build_developer_profiles(prs, issues, repos):
     return pd.DataFrame(rows)
 
 
-def build_pairs(prs, issues):
-    """Positive = merged PR by the developer that closes the issue (§7.5).
-
-    Negatives are sampled from issues that were open when the developer's PR
-    was created and that the developer did not work on. They are *assumed*
-    negatives, not confirmed refusals.
-    """
-    rng = random.Random(SEED)
-    issue_times = issues.set_index("issue_id")[["created_at", "closed_at", "repo_id"]]
-    known = set(issues["issue_id"])
-
-    positives = {}
-    for pr in prs.sort_values("created_at").itertuples():
-        for iid in json.loads(pr.closes_issue_ids):
-            if iid in known and (pr.author_login, iid) not in positives:
-                positives[(pr.author_login, iid)] = pr
-
-    dev_issues = defaultdict(set)
-    for dev, iid in positives:
-        dev_issues[dev].add(iid)
-
-    # issues sorted by creation, to find "open at time t" candidates quickly
-    pool = issue_times.sort_values("created_at")
-    pool_ids = list(pool.index)
-    pool_created = list(pool["created_at"])
-    pool_closed = list(pool["closed_at"].fillna("9999"))
-
-    rows, sampled = [], set()     # sampled: each (dev, issue) negative only once
-    for (dev, iid), pr in positives.items():
-        t = pr.created_at
-        rows.append({
-            "developer_id": dev, "issue_id": iid, "repo_id": issue_times.at[iid, "repo_id"],
-            "label": 1, "label_source": "merged_pull_request",
-            "pr_id": pr.pr_id, "event_time": t,
-        })
-        # candidates: created before t and not closed before t
-        n_created = sum(1 for c in pool_created if c <= t)
-        cands = [pool_ids[k] for k in range(n_created)
-                 if pool_closed[k] >= t and pool_ids[k] not in dev_issues[dev]]
-        cands = [c for c in cands if (dev, c) not in sampled]
-        for neg in rng.sample(cands, min(NEGATIVES_PER_POSITIVE, len(cands))):
-            sampled.add((dev, neg))
-            rows.append({
-                "developer_id": dev, "issue_id": neg, "repo_id": issue_times.at[neg, "repo_id"],
-                "label": 0, "label_source": "unobserved_negative",
-                "pr_id": "", "event_time": t,
-            })
-    return pd.DataFrame(rows)
-
-
 # ---------------------------------------------------------------------------
 
 def main():
@@ -431,19 +372,16 @@ def main():
     prs = build_pull_requests(repo_ids, repos)
     issues, prs = add_issue_links(issues, prs)
     devs = build_developer_profiles(prs, issues, repos)
-    pairs = build_pairs(prs, issues)
 
     tables = {
         "repositories": repos,
         "issues": issues,
         "pull_requests": prs,
         "developer_profiles": devs,
-        "developer_issue_pairs": pairs,
     }
     for name, df in tables.items():
         df.to_csv(OUT / f"{name}.csv", index=False)
 
-    pos = pairs[pairs["label"] == 1]
     print(f"Wrote {OUT}/")
     print(f"  repositories          {len(repos):>6}")
     print(f"  issues                {len(issues):>6}  "
@@ -455,9 +393,6 @@ def main():
           f"(closing link to an issue in our data: {int(prs['link_verified'].sum())})")
     print(f"  developer_profiles    {len(devs):>6}  "
           f"(1 PR: {int((devs['merged_pr_count'] == 1).sum())})")
-    print(f"  developer_issue_pairs {len(pairs):>6}  "
-          f"(positives {len(pos)}, developers {pos['developer_id'].nunique()}, "
-          f"negatives {int((pairs['label'] == 0).sum())})")
 
 
 if __name__ == "__main__":

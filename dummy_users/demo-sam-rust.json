@@ -1,0 +1,550 @@
+{
+  "_dummy": true,
+  "_note": "Fictional user for development. Each key mirrors one GitHub REST API response (see _sources).",
+  "_sources": {
+    "user": "GET /users/{username}",
+    "repos": "GET /users/{username}/repos?type=owner&sort=pushed&per_page=100",
+    "languages": "GET /repos/{owner}/{repo}/languages  (one call per repo in `repos`, keyed by full_name)",
+    "pull_requests": "GET /search/issues?q=author:{username}+type:pr+is:merged&sort=created&per_page=50",
+    "issues": "GET /search/issues?q=author:{username}+type:issue&sort=created&per_page=50",
+    "starred": "GET /users/{username}/starred?per_page=50"
+  },
+  "user": {
+    "login": "demo-sam-rust",
+    "id": 100053,
+    "node_id": "U_dummy100053",
+    "avatar_url": "https://avatars.githubusercontent.com/u/100053?v=4",
+    "html_url": "https://github.com/demo-sam-rust",
+    "type": "User",
+    "site_admin": false,
+    "name": "Sam (demo)",
+    "company": "@acme-infra",
+    "blog": "",
+    "location": "Berlin, Germany",
+    "email": null,
+    "hireable": null,
+    "bio": "Systems programmer. Rust, Go, Kubernetes.",
+    "twitter_username": null,
+    "public_repos": 5,
+    "public_gists": 0,
+    "followers": 120,
+    "following": 12,
+    "created_at": "2018-07-01T10:00:00Z",
+    "updated_at": "2026-09-28T10:00:00Z"
+  },
+  "repos": [
+    {
+      "id": 100031,
+      "node_id": "R_dummy100031",
+      "name": "tcp-chat",
+      "full_name": "demo-sam-rust/tcp-chat",
+      "private": false,
+      "owner": {
+        "login": "demo-sam-rust",
+        "id": 100032,
+        "type": "User",
+        "html_url": "https://github.com/demo-sam-rust"
+      },
+      "html_url": "https://github.com/demo-sam-rust/tcp-chat",
+      "description": "Async multi-room chat server built on tokio",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-sam-rust/tcp-chat",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 22,
+      "watchers_count": 22,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 4,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "rust",
+        "tokio",
+        "async",
+        "networking"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-18T20:00:00Z",
+      "pushed_at": "2026-09-18T20:00:00Z"
+    },
+    {
+      "id": 100033,
+      "node_id": "R_dummy100033",
+      "name": "logtail",
+      "full_name": "demo-sam-rust/logtail",
+      "private": false,
+      "owner": {
+        "login": "demo-sam-rust",
+        "id": 100034,
+        "type": "User",
+        "html_url": "https://github.com/demo-sam-rust"
+      },
+      "html_url": "https://github.com/demo-sam-rust/logtail",
+      "description": "Fast CLI to tail and filter JSON logs, built with clap and serde",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-sam-rust/logtail",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 57,
+      "watchers_count": 57,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 6,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "cli",
+        "rust",
+        "serde",
+        "clap"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-10T17:20:00Z",
+      "pushed_at": "2026-09-10T17:20:00Z"
+    },
+    {
+      "id": 100035,
+      "node_id": "R_dummy100035",
+      "name": "kube-cleaner",
+      "full_name": "demo-sam-rust/kube-cleaner",
+      "private": false,
+      "owner": {
+        "login": "demo-sam-rust",
+        "id": 100036,
+        "type": "User",
+        "html_url": "https://github.com/demo-sam-rust"
+      },
+      "html_url": "https://github.com/demo-sam-rust/kube-cleaner",
+      "description": "Kubernetes operator that deletes finished jobs after a TTL",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-sam-rust/kube-cleaner",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 9,
+      "watchers_count": 9,
+      "language": "Go",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "kubernetes",
+        "operator",
+        "go"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-08-02T11:00:00Z",
+      "pushed_at": "2026-08-02T11:00:00Z"
+    },
+    {
+      "id": 100037,
+      "node_id": "R_dummy100037",
+      "name": "axum-auth-example",
+      "full_name": "demo-sam-rust/axum-auth-example",
+      "private": false,
+      "owner": {
+        "login": "demo-sam-rust",
+        "id": 100038,
+        "type": "User",
+        "html_url": "https://github.com/demo-sam-rust"
+      },
+      "html_url": "https://github.com/demo-sam-rust/axum-auth-example",
+      "description": "Session and JWT authentication example for axum",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-sam-rust/axum-auth-example",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 31,
+      "watchers_count": 31,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "axum",
+        "rust",
+        "web",
+        "authentication"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-07-25T14:00:00Z",
+      "pushed_at": "2026-07-25T14:00:00Z"
+    },
+    {
+      "id": 100039,
+      "node_id": "R_dummy100039",
+      "name": "advent-of-code",
+      "full_name": "demo-sam-rust/advent-of-code",
+      "private": false,
+      "owner": {
+        "login": "demo-sam-rust",
+        "id": 100040,
+        "type": "User",
+        "html_url": "https://github.com/demo-sam-rust"
+      },
+      "html_url": "https://github.com/demo-sam-rust/advent-of-code",
+      "description": "Solutions in Rust",
+      "fork": false,
+      "url": "https://api.github.com/repos/demo-sam-rust/advent-of-code",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 0,
+      "watchers_count": 0,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2025-12-26T09:00:00Z",
+      "pushed_at": "2025-12-26T09:00:00Z"
+    }
+  ],
+  "languages": {
+    "demo-sam-rust/tcp-chat": {
+      "Rust": 38110
+    },
+    "demo-sam-rust/logtail": {
+      "Rust": 52012,
+      "Shell": 410
+    },
+    "demo-sam-rust/kube-cleaner": {
+      "Go": 41020,
+      "Dockerfile": 300,
+      "Makefile": 900
+    },
+    "demo-sam-rust/axum-auth-example": {
+      "Rust": 17600,
+      "HTML": 1200
+    },
+    "demo-sam-rust/advent-of-code": {
+      "Rust": 60230
+    }
+  },
+  "pull_requests": {
+    "total_count": 3,
+    "incomplete_results": false,
+    "items": [
+      {
+        "url": "https://api.github.com/repos/clap-rs/clap/issues/6120",
+        "repository_url": "https://api.github.com/repos/clap-rs/clap",
+        "html_url": "https://github.com/clap-rs/clap/pull/6120",
+        "id": 100041,
+        "node_id": "I_dummy100041",
+        "number": 6120,
+        "title": "fix(help): wrap long possible values in help output",
+        "user": {
+          "login": "demo-sam-rust",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-06-28T10:00:00Z",
+        "updated_at": "2026-07-02T09:00:00Z",
+        "closed_at": "2026-07-02T09:00:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "Long possible values no longer overflow the terminal width. Fixes #6101.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/clap-rs/clap/pulls/6120",
+          "html_url": "https://github.com/clap-rs/clap/pull/6120",
+          "merged_at": "2026-07-02T09:00:00Z"
+        }
+      },
+      {
+        "url": "https://api.github.com/repos/tokio-rs/axum/issues/3410",
+        "repository_url": "https://api.github.com/repos/tokio-rs/axum",
+        "html_url": "https://github.com/tokio-rs/axum/pull/3410",
+        "id": 100042,
+        "node_id": "I_dummy100042",
+        "number": 3410,
+        "title": "docs: add example for graceful shutdown with tokio signal",
+        "user": {
+          "login": "demo-sam-rust",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [
+          {
+            "name": "documentation"
+          }
+        ],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-08-19T15:00:00Z",
+        "updated_at": "2026-08-22T08:00:00Z",
+        "closed_at": "2026-08-22T08:00:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "Shows how to combine axum::serve with tokio::signal for graceful shutdown.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/tokio-rs/axum/pulls/3410",
+          "html_url": "https://github.com/tokio-rs/axum/pull/3410",
+          "merged_at": "2026-08-22T08:00:00Z"
+        }
+      },
+      {
+        "url": "https://api.github.com/repos/kubernetes-sigs/kind/issues/3950",
+        "repository_url": "https://api.github.com/repos/kubernetes-sigs/kind",
+        "html_url": "https://github.com/kubernetes-sigs/kind/pull/3950",
+        "id": 100043,
+        "node_id": "I_dummy100043",
+        "number": 3950,
+        "title": "Respect KIND_EXPERIMENTAL_PROVIDER when deleting clusters",
+        "user": {
+          "login": "demo-sam-rust",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "closed",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-09-03T12:00:00Z",
+        "updated_at": "2026-09-08T12:00:00Z",
+        "closed_at": "2026-09-08T12:00:00Z",
+        "author_association": "CONTRIBUTOR",
+        "body": "kind delete cluster ignored the provider env var. Fixes #3944.",
+        "pull_request": {
+          "url": "https://api.github.com/repos/kubernetes-sigs/kind/pulls/3950",
+          "html_url": "https://github.com/kubernetes-sigs/kind/pull/3950",
+          "merged_at": "2026-09-08T12:00:00Z"
+        }
+      }
+    ]
+  },
+  "issues": {
+    "total_count": 1,
+    "incomplete_results": false,
+    "items": [
+      {
+        "url": "https://api.github.com/repos/tokio-rs/tokio/issues/7590",
+        "repository_url": "https://api.github.com/repos/tokio-rs/tokio",
+        "html_url": "https://github.com/tokio-rs/tokio/issues/7590",
+        "id": 100044,
+        "node_id": "I_dummy100044",
+        "number": 7590,
+        "title": "Document cancellation safety of tokio::io::copy_bidirectional",
+        "user": {
+          "login": "demo-sam-rust",
+          "id": 0,
+          "type": "User"
+        },
+        "labels": [],
+        "state": "open",
+        "locked": false,
+        "comments": 2,
+        "created_at": "2026-09-12T09:00:00Z",
+        "updated_at": "2026-09-12T09:00:00Z",
+        "closed_at": null,
+        "author_association": "NONE",
+        "body": "It is unclear whether copy_bidirectional is cancel-safe when used inside select!."
+      }
+    ]
+  },
+  "starred": [
+    {
+      "id": 100045,
+      "node_id": "R_dummy100045",
+      "name": "tokio",
+      "full_name": "tokio-rs/tokio",
+      "private": false,
+      "owner": {
+        "login": "tokio-rs",
+        "id": 100046,
+        "type": "User",
+        "html_url": "https://github.com/tokio-rs"
+      },
+      "html_url": "https://github.com/tokio-rs/tokio",
+      "description": "A runtime for writing reliable asynchronous applications with Rust.",
+      "fork": false,
+      "url": "https://api.github.com/repos/tokio-rs/tokio",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 30000,
+      "watchers_count": 30000,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "rust",
+        "async",
+        "networking"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100047,
+      "node_id": "R_dummy100047",
+      "name": "ripgrep",
+      "full_name": "BurntSushi/ripgrep",
+      "private": false,
+      "owner": {
+        "login": "BurntSushi",
+        "id": 100048,
+        "type": "User",
+        "html_url": "https://github.com/BurntSushi"
+      },
+      "html_url": "https://github.com/BurntSushi/ripgrep",
+      "description": "ripgrep recursively searches directories for a regex pattern",
+      "fork": false,
+      "url": "https://api.github.com/repos/BurntSushi/ripgrep",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 53000,
+      "watchers_count": 53000,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "rust",
+        "cli",
+        "search"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100049,
+      "node_id": "R_dummy100049",
+      "name": "helix",
+      "full_name": "helix-editor/helix",
+      "private": false,
+      "owner": {
+        "login": "helix-editor",
+        "id": 100050,
+        "type": "User",
+        "html_url": "https://github.com/helix-editor"
+      },
+      "html_url": "https://github.com/helix-editor/helix",
+      "description": "A post-modern modal text editor.",
+      "fork": false,
+      "url": "https://api.github.com/repos/helix-editor/helix",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 40000,
+      "watchers_count": 40000,
+      "language": "Rust",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "editor",
+        "rust"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": 100051,
+      "node_id": "R_dummy100051",
+      "name": "k9s",
+      "full_name": "derailed/k9s",
+      "private": false,
+      "owner": {
+        "login": "derailed",
+        "id": 100052,
+        "type": "User",
+        "html_url": "https://github.com/derailed"
+      },
+      "html_url": "https://github.com/derailed/k9s",
+      "description": "Kubernetes CLI To Manage Your Clusters In Style!",
+      "fork": false,
+      "url": "https://api.github.com/repos/derailed/k9s",
+      "homepage": null,
+      "size": 240,
+      "stargazers_count": 30000,
+      "watchers_count": 30000,
+      "language": "Go",
+      "has_issues": true,
+      "forks_count": 0,
+      "archived": false,
+      "disabled": false,
+      "open_issues_count": 0,
+      "license": {
+        "key": "mit",
+        "spdx_id": "MIT"
+      },
+      "topics": [
+        "kubernetes",
+        "cli",
+        "go"
+      ],
+      "visibility": "public",
+      "default_branch": "main",
+      "created_at": "2025-01-10T09:00:00Z",
+      "updated_at": "2026-09-01T12:00:00Z",
+      "pushed_at": "2026-09-01T12:00:00Z"
+    }
+  ]
+}

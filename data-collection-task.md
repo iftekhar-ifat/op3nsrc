@@ -75,12 +75,13 @@ python3 data_collection/find_repos.py "language:python stars:>5000"
 Change the query to whatever fits (e.g. `fastapi`, `django`, `react`, `go`). This is just for reference — it does not change what gets collected.
 
 Each row in `data/repo_list.csv` is one repo. Any edits you make to this file (adding/removing rows) directly change what `main.py` collects.
-   ```csv
-   owner,repo,full_name
-   fastapi,fastapi,fastapi/fastapi
-   pydantic,pydantic,pydantic/pydantic
-   pandas-dev,pandas,pandas-dev/pandas
-   ```
+
+```csv
+owner,repo,full_name
+tiangolo,fastapi,tiangolo/fastapi
+pydantic,pydantic,pydantic/pydantic
+pandas-dev,pandas,pandas-dev/pandas
+```
 
 `main.py` reads from this one file, so everyone pulls the same repos.
 
@@ -116,7 +117,7 @@ python3 data_collection/collect_issues_and_prs.py
 - **Resuming:** finished repos are recorded in `data/raw/issues_prs_done.txt`, so if the run stops (rate limit, laptop closed, Ctrl+C) just run the same command again and it continues with the remaining repos. Delete a line from that file to re-collect that repo.
 - **Broken READMEs:** `python3 data_collection/main.py --step readmes` re-fetches only READMEs that are missing or were saved as a "404: Not Found" page.
 
-Note on the issues endpoint: it returns PRs mixed in with issues. A record where `"pull_request"` is not null is actually a PR — that's expected, we filter it during cleaning in Week 2.
+Note on the issues endpoint: it returns PRs mixed in with issues. A record where `"pull_request"` is not null is actually a PR — the collector drops these (and `clean.py` checks again).
 
 The issues + PRs step is the slow one (big repos have thousands of issues), expect **10–30 minutes for the full repo list** (202 repos as of now). Getting rate-limited is fine — just wait a bit and rerun; it overwrites the same files.
 
@@ -132,9 +133,9 @@ op3nsrc/
 ├── data/
 │   ├── repo_list.csv
 │   └── raw/
-│       ├── repos/     # e.g. fastapi__fastapi.json, ...__languages.json, ...__topics.json
-│       ├── readmes/   # e.g. fastapi__fastapi.md
-│       ├── issues/    # e.g. fastapi__fastapi__page1.json ... pageN.json
+│       ├── repos/     # e.g. tiangolo__fastapi.json, ...__languages.json, ...__topics.json
+│       ├── readmes/   # e.g. tiangolo__fastapi.md
+│       ├── issues/    # e.g. tiangolo__fastapi__page1.json ... pageN.json
 │       └── pulls/     # same pattern
 └── data_collection/
     ├── main.py

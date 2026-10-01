@@ -1,11 +1,12 @@
 # op3nsrc
 
-**Personalized open-source contribution recommendations.** Op3nSrc matches a developer's skills (from their GitHub activity) to open GitHub issues they are likely able to solve, using NLP (TF-IDF baseline + Sentence-BERT embeddings).
+**Personalized open-source contribution recommendations.** Enter a GitHub username and Op3nSrc recommends the **open-source projects that fit your skills**, plus **open issues inside each project** to start with. A text classifier (TF-IDF + Naive Bayes) picks the repos; text similarity picks the issues.
 
-> **Recommended issue:** Add pagination to a FastAPI endpoint — **Match: 89%**
-> *Why:* your activity shows Python, FastAPI and REST APIs, and the issue is labelled `good first issue`.
+> **1. vitejs/vite** — *Why:* vite, frontend, tooling
+> • #23179 Stale refresh when editing script in html file … 
+> • #23472 fix: image-set() URL rewrite truncates on nested parentheses
 
-See [`overall-idea.md`](overall-idea.md) for the motivation and plan, and [Status](#status) below for current progress.
+**New here? Read [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md)** — the whole project end to end; [`NOTES.md`](NOTES.md) explains each part in detail and why. [`overall-idea.md`](overall-idea.md) has the motivation and plan, [Status](#status) below the progress.
 
 ## Pipeline
 
@@ -15,8 +16,10 @@ data/repo_list.csv (202 hand-picked repos)
 raw JSON: repos, READMEs, issues, merged PRs
         ↓  data_collection/clean.py     (offline → data/cleaned/)
 cleaned tables (CSV)
-        ↓  EDA → TF-IDF / Sentence-BERT models → web app   (Weeks 2–5)
-ranked issue recommendations
+        ↓  notebooks/eda.ipynb             (explore)
+        ↓  notebooks/classification.ipynb  (train + test: developer text → repo)
+        ↓  notebooks/recommender.ipynb     (GitHub user → top 5 repos → top 3 issues each)
+recommendations → web app (Week 4)
 ```
 
 ## Quick start
@@ -73,8 +76,7 @@ Current dataset (collection window: issues/PRs active since 2026-06-24):
 | `repositories.csv`          | 202    | Repo description, cleaned README, topics, languages, stars              |
 | `issues.csv`                | 15,053 | Issues; `final_text` is the NLP input (7,453 open, 210 beginner-friendly) |
 | `pull_requests.csv`         | 4,003  | Merged PRs that reference an issue (1,821 close an issue in our data)   |
-| `developer_profiles.csv`    | 1,843  | One row per PR author; `experience_text` is the NLP input               |
-| `developer_issue_pairs.csv` | 10,932 | 1,822 positive (developer solved issue) + 9,110 sampled negative pairs  |
+| `developer_profiles.csv`    | 1,843  | One row per PR author (languages, topics, PR titles); used in EDA       |
 
 Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON strings (`json.loads`).
 
@@ -85,12 +87,24 @@ Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON stri
 ```text
 op3nsrc/
 ├── README.md
+├── PROJECT_OVERVIEW.md                  # start here: the whole project end to end
+├── NOTES.md                             # details: profiles, leakage, split, metrics, "Why", decision log
 ├── overall-idea.md                      # project idea, motivation, timeline
 ├── data-collection-task.md              # Week 1 how-to (collection)
 ├── data-collection-and-processing.md    # data model, cleaning rules, tables
 ├── nlp-recommendation.md                # model plan (TF-IDF, SBERT, evaluation)
-├── notebooks/
-│   └── eda.ipynb                        # exploratory analysis + key findings
+├── notebooks/                           # run things + show results (implementation is in recommender/)
+│   ├── eda.ipynb                        # exploratory analysis + key findings
+│   ├── classification.ipynb             # dataset, train/test split, model comparison, test metrics
+│   └── recommender.ipynb                # demo: GitHub user → top 5 repos → top 3 issues each
+├── recommender/                         # implementation used by the notebooks
+│   ├── data.py                          # load cleaned tables, build repo/issue texts
+│   ├── classification.py                # dataset (developer text → repo), split, metrics
+│   ├── models.py                        # standard classifiers + TF-IDF text matcher
+│   ├── github_profile.py                # GitHub user data → profile text
+│   └── recommend.py                     # Recommender: user → repos → issues, with "Why"
+├── dummy_users/                         # fictional users in GitHub API format (input until live fetch)
+├── results/                             # test metrics per model (CSV)
 ├── .env.example                         # copy to .env and add your token
 ├── requirements.txt                     # direct dependencies
 ├── requirements-lock.txt                # exact tested versions
@@ -112,6 +126,8 @@ op3nsrc/
 - [x] Week 1 — data collection (202 repos)
 - [x] Week 2 — cleaning + tables
 - [x] Week 2 — EDA (`notebooks/eda.ipynb`)
-- [ ] Weeks 3–4 — TF-IDF baseline, Sentence-BERT model, evaluation (P@K, R@K, NDCG@K, MRR)
+- [x] Week 3 — repo classifier: TF-IDF + Naive Bayes, test top-5 accuracy 73% vs 6% baseline (`notebooks/classification.ipynb`)
+- [x] Week 3 — recommender demo: GitHub user → repos + issues (`notebooks/recommender.ipynb`, dummy users)
+- [ ] Week 4 — web page
 - [ ] Week 4 — web app
 - [ ] Week 5 — fairness, privacy, final report
