@@ -1,16 +1,17 @@
 # Data Collection Scripts
 
-Scripts for downloading public GitHub data for the Op3nSrc recommendation project. They pull repository metadata, READMEs, issues and pull requests from the GitHub API and save them as raw JSON under `data/raw/`.
+Scripts for downloading public GitHub data for the Op3nSrc recommendation project and turning it into clean tables. The collection scripts pull repository metadata, READMEs, issues and pull requests from the GitHub API and save them as raw JSON under `data/raw/`; `clean.py` turns that into CSV tables under `data/cleaned/`.
 
 ## Files
 
 | Script                      | What it does                                                                                                                               |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `main.py`                   | **The standard way to run collection.** Runs every step in order, or a single step with `--step`. Checks `.env` and `repo_list.csv` first. |
-| `github_client.py`          | Shared API client. Reads the token from `<project_root>/.env`. Imported by the other scripts, not run directly.                            |
+| `github_client.py`          | Shared API client. Reads the token from `<project_root>/.env`; waits on rate limits, retries network/server errors, fails fast on 404. Not run directly. |
 | `find_repos.py`             | Searches GitHub for candidate repositories given a single search query. Prints results so the team can build `data/repo_list.csv`.         |
-| `collect_repos.py`          | For every repo in `repo_list.csv`: downloads repo info, README, languages and topics.                                                      |
-| `collect_issues_and_prs.py` | For every repo in `repo_list.csv`: downloads issues and pull requests created in the last 3 months, page by page, with quality filters.    |
+| `collect_repos.py`          | For every repo in `repo_list.csv`: downloads repo info, README (any file name, follows symlinks), languages and topics.                    |
+| `collect_issues_and_prs.py` | For every repo in `repo_list.csv`: downloads issues and merged pull requests from the last 3 months, with quality filters. Resumable.      |
+| `clean.py`                  | **Offline.** Turns `data/raw/` into the cleaned tables in `data/cleaned/` (see [Cleaning](#cleaning)).                                     |
 
 ## Requirements
 
@@ -18,7 +19,7 @@ Scripts for downloading public GitHub data for the Op3nSrc recommendation projec
 - A GitHub personal access token
 
 ```bash
-pip3 install requests python-dotenv
+pip3 install requests python-dotenv pandas
 ```
 
 ## Setup
@@ -40,11 +41,7 @@ pip3 install requests python-dotenv
    pandas-dev,pandas,pandas-dev/pandas
    ```
 
-Run everything from the project root:
-
-```bash
-cd /Users/iftekhar/Documents/codes/op3nsrc
-```
+Run everything from the project root (the folder that contains `data/` and `.env`).
 
 ## Usage
 
@@ -76,7 +73,12 @@ You can also run just one part:
 ```bash
 python3 data_collection/main.py --step repos          # only repo metadata
 python3 data_collection/main.py --step issues_and_prs # only issues + PRs
+python3 data_collection/main.py --step readmes        # re-fetch only missing/broken READMEs
 ```
+
+**Resuming:** `collect_issues_and_prs.py` records every finished repo in `data/raw/issues_prs_done.txt` and skips those on the next run. If a run stops (rate limit, Ctrl+C, laptop sleep), just run the same command again. To re-collect a repo, delete its line from that file — its old page files are replaced automatically.
+
+**Repos with Issues or PRs disabled on GitHub** (`has_issues` / `has_pull_requests` is `false` in the repo JSON) skip that request. A repo that returns `404` is reported as `!!! failed on ...` and skipped without stopping the run; it is retried on the next run.
 
 ### 3. Run the steps individually (optional)
 
@@ -105,18 +107,24 @@ data/raw/pulls/fastapi__fastapi__page1.json ... pageN.json
 
 The 3-month window is set in the `SINCE` constant at the top of `collect_issues_and_prs.py`. Adjust it if needed.
 
-Note: GitHub's issues endpoint returns pull requests mixed in with issues. A record where `"pull_request"` is not null is actually a PR — that's expected and is filtered out during cleaning.
+Filters applied while collecting:
+
+- **Issues:** PRs (the issues endpoint mixes them in), `[bot]` authors and near-empty issues are dropped; max 100 per repo. Note that GitHub's `since` filter means *updated* since, so some older issues with recent activity are included (flagged later as `created_in_window = False`).
+- **PRs:** only merged, non-bot PRs whose text references an issue (`Fixes/Closes/Resolves/Refs #N`); max 50 per repo. The PR endpoint ignores `since`, so paging stops as soon as it reaches PRs created before `SINCE`.
+- Pages with nothing worth keeping are not saved, so page numbers can have gaps (e.g. `page3`, `page5`).
 
 ## Output
 
 ```text
 data/
-├── repo_list.csv          # the repo list you created
-└── raw/
-    ├── repos/             # repo JSON + languages + topics
-    ├── readmes/           # raw README markdown
-    ├── issues/            # issue/PR page JSON
-    └── pulls/             # pull request page JSON
+├── repo_list.csv              # the 202 repos
+├── raw/
+│   ├── repos/                 # repo JSON + languages + topics
+│   ├── readmes/               # raw README text
+│   ├── issues/                # issue page JSON
+│   ├── pulls/                 # merged-PR page JSON
+│   └── issues_prs_done.txt    # repos already collected (for resuming)
+└── cleaned/                   # tables built by clean.py
 ```
 
 ### What each file is for
@@ -214,11 +222,7 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
     "user": { "login": "scientist_99" },
     "created_at": "2026-05-10T14:00:00Z",
     "merged_at": "2026-05-15T08:00:00Z",
-    "body": "Adds `limit`/`offset` query params... Fixes #942",
-    "commits": 4,
-    "changed_files": 5,
-    "additions": 120,
-    "deletions": 30
+    "body": "Adds `limit`/`offset` query params... Fixes #942"
   }
 ]
 ```
@@ -228,8 +232,8 @@ The raw GitHub responses are nested (e.g. labels are a list of objects, dates ar
 - **Files per repo:** for each repo in `repo_list.csv`, you should count exactly **4 files** from `collect_repos.py` (3 in `repos/`, 1 README in `readmes/`) plus at least one issue/PR page file if the repo has activity. A repo with 0 issues/PRs in the last 3 months may have none.
 - **File names match:** `ls data/raw/repos/` should show `<owner>__<repo>.json` plus `<owner>__<repo>__languages.json` and `<owner>__<repo>__topics.json` for each entry in your list.
 - **Content looks right:** open a file — repos should show `full_name`, `language` and `archived`; issues should show `title`, `state` and `body`; PRs should show `merged_at`.
-- **Size makes sense:** total kept records per repo should be at most **100 issues** and **50 PRs**, and each page file (except the last) should hold a full page of records.
-- **No errors:** the script printed `done: <repo>` for every repo it collected.
+- **Size makes sense:** total kept records per repo should be at most **100 issues** and **50 PRs**. Page files hold only the records that passed the filters, so they are usually smaller than 100.
+- **No errors:** the script printed `done: <repo>` for every repo, and `data/raw/issues_prs_done.txt` has one line per repo in `repo_list.csv`.
 
 A quick spot-check command:
 
@@ -247,13 +251,50 @@ The raw JSON is the input for the cleaning step (Week 2), documented in `../data
 
 - Authenticated requests: 5,000/hour per account.
 - Both `collect_repos.py` and `collect_issues_and_prs.py` request data in pages of `per_page=100`, which is the maximum.
-- If you hit the limit you'll get a clear error message; wait until the reset time and rerun. The scripts overwrite the same files, so rerunning is safe.
+- If you hit the limit the client prints how long it waits and continues by itself (it honours `Retry-After` for secondary limits). If you stop it, rerun — finished repos are skipped.
 
 ## Troubleshooting
 
 | Error                         | Meaning                                 | Fix                                               |
 | ----------------------------- | --------------------------------------- | ------------------------------------------------- |
 | `401 Unauthorized`            | Token missing or wrong                  | Check `GITHUB_TOKEN` in `.env`                    |
-| `403 API rate limit exceeded` | Out of hourly requests                  | Wait for reset; don't collect more repos per run  |
-| `404 Not Found`               | A repo in `repo_list.csv` doesn't exist | Check the `owner/repo` spelling (case matters)    |
-| 403 "secondary rate limit"    | Requests too fast                       | Increase `time.sleep(0.1)` to `0.5` in the script |
+| `Rate limit reached ... Waiting N seconds` | Out of hourly requests     | Nothing — it continues by itself after the reset  |
+| `!!! failed on owner/repo: 404`           | Repo renamed/deleted, or Issues/PRs disabled | Check the spelling in `repo_list.csv` (case matters) and the repo on GitHub |
+| Run stopped halfway                       | Ctrl+C / sleep / network    | Rerun the same command — it resumes               |
+| 403 "secondary rate limit"                | Requests too fast           | Handled automatically; if frequent, raise `time.sleep(0.1)` to `0.5` |
+
+## Cleaning
+
+```bash
+python3 data_collection/clean.py
+```
+
+Runs offline in ~10 s, never modifies `data/raw/`, and rewrites `data/cleaned/`:
+
+| File                        | One row per                       | Key columns                                                                 |
+| --------------------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| `repositories.csv`          | repo                              | `repo_id`, `current_full_name`, `description_clean`, `readme_clean`, `topics`, `languages`, `stars` |
+| `issues.csv`                | issue                             | `issue_id`, `final_text`, `labels`, `is_beginner_friendly`, `is_help_wanted`, `state`, `created_in_window`, `linked_pr_ids` |
+| `pull_requests.csv`         | merged PR                         | `pr_id`, `author_login`, `closes_issue_ids`, `references_issue_ids`, `link_verified` |
+| `developer_profiles.csv`    | PR author                         | `developer_id`, `languages`, `topics`, `pr_titles`, `experience_text`, `merged_pr_count` |
+| `developer_issue_pairs.csv` | (developer, issue) pair           | `label` (1 = merged PR closed it, 0 = sampled negative), `event_time`        |
+
+What it does:
+
+- **IDs:** `repo_id = "owner/repo"` as in `repo_list.csv` (17 repos were renamed on GitHub; the new name is in `current_full_name`), `issue_id = "owner/repo#123"`, `pr_id = "owner/repo!456"`, `developer_id = login`.
+- **Bots removed:** GitHub `type: Bot` accounts (e.g. Copilot), logins ending in `bot`/`robot`, and CI reporters (`cockroach-teamcity`, `elasticsearchmachine`, `GordonTheTurtle`).
+- **Text:** strips issue-template comments and checklists, code blocks, inline code, images, HTML, URLs and markdown syntax; lowercases. `final_text` = title + body (title alone if the body is empty). No stemming/stopwords — the TF-IDF model does that itself.
+- **Labels:** lowercased, emoji removed; beginner/help-wanted flags catch variants like `e-easy`, `good-first-issue`, `first-contribution`, `status: help wanted`.
+- **PR → issue links:** GitHub closing keywords (`close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`) with `#N`, `owner/repo#N` or a full issue URL. `refs #N` is kept as a reference only, not as a positive label.
+- **Negatives:** 5 per positive, sampled (seed 42) from issues that were open when the developer's PR was created.
+
+Read the tables with:
+
+```python
+import json, pandas as pd
+issues = pd.read_csv("data/cleaned/issues.csv", keep_default_na=False)
+issues["labels"] = issues["labels"].map(json.loads)
+```
+
+> ⚠️ `experience_text` uses **all** of a developer's PRs. For model evaluation, rebuild profiles from PRs before the split date (`event_time` in the pairs table) to avoid leaking the answer.
+

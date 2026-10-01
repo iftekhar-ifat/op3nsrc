@@ -11,3 +11,4 @@ venv/
 data/raw/
 data/
 TODO.md
+.DS_Store
