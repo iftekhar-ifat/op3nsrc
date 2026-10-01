@@ -1,9 +1,7 @@
 owner,repo,full_name
 tiangolo,fastapi,tiangolo/fastapi
 pydantic,pydantic,pydantic/pydantic
-encode,httpx,encode/httpx
 psf,requests,psf/requests
-django,django,django/django
 pallets,flask,pallets/flask
 aio-libs,aiohttp,aio-libs/aiohttp
 litestar-org,litestar,litestar-org/litestar
@@ -38,7 +36,6 @@ nodejs,node,nodejs/node
 facebook,react,facebook/react
 microsoft,typescript,microsoft/typescript
 vercel,next.js,vercel/next.js
-vuejs,vue,vuejs/vue
 sveltejs,svelte,sveltejs/svelte
 angular,angular,angular/angular
 expressjs,express,expressjs/express
@@ -73,7 +70,6 @@ caddyserver,caddy,caddyserver/caddy
 traefik,traefik,traefik/traefik
 zeromicro,go-zero,zeromicro/go-zero
 grpc,grpc-go,grpc/grpc-go
-minio,minio,minio/minio
 syncthing,syncthing,syncthing/syncthing
 opentofu,opentofu,opentofu/opentofu
 rust-lang,rust,rust-lang/rust
@@ -93,7 +89,6 @@ rayon-rs,rayon,rayon-rs/rayon
 spring-projects,spring-boot,spring-projects/spring-boot
 spring-projects,spring-framework,spring-projects/spring-framework
 elastic,elasticsearch,elastic/elasticsearch
-apache,kafka,apache/kafka
 google,guava,google/guava
 square,retrofit,square/retrofit
 square,okhttp,square/okhttp
@@ -106,20 +101,14 @@ AvaloniaUI,Avalonia,AvaloniaUI/Avalonia
 flutter,flutter,flutter/flutter
 facebook,react-native,facebook/react-native
 expo,expo,expo/expo
-postgres,postgres,postgres/postgres
 redis,redis,redis/redis
-mongodb,mongo,mongodb/mongo
 clickhouse,clickhouse,clickhouse/clickhouse
-git,git,git/git
 vim,vim,vim/vim
 neovim,neovim,neovim/neovim
 jqlang,jq,jqlang/jq
-emacs-mirror,emacs,emacs-mirror/emacs
-ziglang,zig,ziglang/zig
 elixir-lang,elixir,elixir-lang/elixir
 ocaml,ocaml,ocaml/ocaml
 sqlalchemy,sqlalchemy,sqlalchemy/sqlalchemy
-pallets,jinja,pallets/jinja
 pallets,click,pallets/click
 pallets,werkzeug,pallets/werkzeug
 encode,django-rest-framework,encode/django-rest-framework
@@ -145,7 +134,6 @@ ray-project,ray,ray-project/ray
 mlflow,mlflow,mlflow/mlflow
 dagster-io,dagster,dagster-io/dagster
 prefecthq,prefect,prefecthq/prefect
-kovidgoyal,calibre,kovidgoyal/calibre
 twbs,bootstrap,twbs/bootstrap
 jquery,jquery,jquery/jquery
 mrdoob,three.js,mrdoob/three.js
@@ -198,11 +186,8 @@ tokio-rs,tracing,tokio-rs/tracing
 chronotope,chrono,chronotope/chrono
 rust-lang,rust-analyzer,rust-lang/rust-analyzer
 quickwit-inc,tantivy,quickwit-inc/tantivy
-apache,flink,apache/flink
 apache,druid,apache/druid
-apache,zookeeper,apache/zookeeper
 mybatis,mybatis-3,mybatis/mybatis-3
-hibernate,hibernate-orm,hibernate/hibernate-orm
 keycloak,keycloak,keycloak/keycloak
 junit-team,junit5,junit-team/junit5
 mockito,mockito,mockito/mockito
@@ -214,7 +199,5 @@ Serilog,serilog,Serilog/serilog
 HangfireIO,Hangfire,HangfireIO/Hangfire
 AutoMapper,AutoMapper,AutoMapper/AutoMapper
 react-navigation,react-navigation,react-navigation/react-navigation
-FFmpeg,FFmpeg,FFmpeg/FFmpeg
 curl,curl,curl/curl
-ruby,ruby,ruby/ruby
 php,php-src,php/php-src

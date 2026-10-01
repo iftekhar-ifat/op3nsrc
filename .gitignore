@@ -10,3 +10,4 @@ venv/
 # local raw dataset
 data/raw/
 data/
+TODO.md

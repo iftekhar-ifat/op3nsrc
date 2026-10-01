@@ -110,11 +110,13 @@ python3 data_collection/collect_issues_and_prs.py
 
 - `collect_repos.py` saves repo info, README, languages and topics.
 - `collect_issues_and_prs.py` saves issues + pull requests created in the **last 3 months** (the 3-month window is set in `SINCE` at the top of the script).
-- The API returns 100 records per page, so the scripts page through until there's nothing left.
+- The API returns 100 records per page, so the scripts page through until there's nothing left (PR paging stops as soon as it reaches PRs older than `SINCE`).
+- **Resuming:** finished repos are recorded in `data/raw/issues_prs_done.txt`, so if the run stops (rate limit, laptop closed, Ctrl+C) just run the same command again and it continues with the remaining repos. Delete a line from that file to re-collect that repo.
+- **Broken READMEs:** `python3 data_collection/main.py --step readmes` re-fetches only READMEs that are missing or were saved as a "404: Not Found" page.
 
 Note on the issues endpoint: it returns PRs mixed in with issues. A record where `"pull_request"` is not null is actually a PR — that's expected, we filter it during cleaning in Week 2.
 
-The issues + PRs step is the slow one (big repos have thousands of issues), expect **10–30 minutes for the full repo list** (218 repos as of now). Getting rate-limited is fine — just wait a bit and rerun; it overwrites the same files.
+The issues + PRs step is the slow one (big repos have thousands of issues), expect **10–30 minutes for the full repo list** (202 repos as of now). Getting rate-limited is fine — just wait a bit and rerun; it overwrites the same files.
 
 ---
 

@@ -36,7 +36,7 @@ Cleaned text documents (for the NLP model)
 
 We will **not** collect all of GitHub. We pick a bounded, relevant set:
 
-- **Size:** 218 active repositories (hand-picked, in `data/repo_list.csv`).
+- **Size:** 202 active repositories (hand-picked, in `data/repo_list.csv`). 17 repos were dropped after collection: 12 with GitHub Issues disabled (django, postgres, git, mongo, kafka, flink, zookeeper, hibernate-orm, ruby, FFmpeg, emacs, calibre) and 5 archived/inactive (minio, vue, zig, jinja, httpx).
 - **Domain:** a few focused ecosystems — e.g. Python (web/AI/ML), JavaScript/TypeScript (web), Go, Rust (`fastapi`, `pandas`, `django`, `react`, `langchain`, `go`, ...).
 - **Criteria for inclusion:** not archived, has open issues, has a `good first issue` or `help wanted` label somewhere, active in the last 3 months.
 
@@ -308,6 +308,8 @@ Notes:
 
 ## 7. Building the tables
 
+> **Implemented in `data_collection/clean.py`** → `data/cleaned/`. Differences from the examples below: IDs are readable instead of numbered (`repo_id = "fastapi/fastapi"`, `issue_id = "fastapi/fastapi#942"`, `pr_id = "fastapi/fastapi!119"`, `developer_id = login`); list columns are JSON strings; PR size columns (`commits`, `additions`, …) are not included because the PR list endpoint doesn't return them. Load with `pd.read_csv(path, keep_default_na=False)`.
+
 ### 7.1 `repositories.csv`
 
 One row per repo (subset shown):
@@ -368,7 +370,7 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 
 ## 8. Checklist before moving on (Week 2 begins)
 
-- [ ] Repo list reviewed and saved (`data/repo_list.csv`, 218 repos).
+- [ ] Repo list reviewed and saved (`data/repo_list.csv`, 202 repos).
 - [ ] All raw responses collected and stored under `data/raw/`.
 - [ ] Dedup, drop archived/bots, normalize labels and languages.
 - [ ] Text cleaning applied and `final_text` column exists for every issue.
@@ -380,13 +382,13 @@ Negative examples are sampled issues the developer did **not** contribute to (ma
 
 ## 9. Team task ideas
 
-| Task                                   | Owner (suggested)          |
-| -------------------------------------- | -------------------------- |
-| Pick + review the 218-repo list        | 1 person                   |
-| Write `data_collection/main.py` + the collection scripts | 1–2 people |
+| Task                                                                 | Owner (suggested)        |
+| -------------------------------------------------------------------- | ------------------------ |
+| Pick + review the 202-repo list                                      | 1 person                 |
+| Write `data_collection/main.py` + the collection scripts             | 1–2 people               |
 | Run `data_collection/main.py` and cache raw responses to `data/raw/` | whoever runs the scripts |
-| Write cleaning + text pipeline         | 1 person                   |
-| PR→issue linking + label generation    | 1 person                   |
-| EDA notebooks on cleaned tables        | 1 person (Week 2)          |
+| Write cleaning + text pipeline                                       | 1 person                 |
+| PR→issue linking + label generation                                  | 1 person                 |
+| EDA notebooks on cleaned tables                                      | 1 person (Week 2)        |
 
 Everyone should be able to rerun the pipeline locally and get the same 5 tables at the end.
