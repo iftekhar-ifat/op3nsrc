@@ -355,7 +355,7 @@ add pagination to endpoint
 ### 7.5 Classifier dataset (built in code, not a CSV)
 
 The repo classifier (`recommender/classification.py`) builds its training data from `pull_requests.csv`:
-one row per developer, **text** = their merged-PR titles + bodies, **label** = the repo they merged most
+one row per developer, **text** = their merged-PR titles + descriptions (PR-template sentences removed) + titles of issues they opened, **label** = the repo they merged most
 PRs into. See `nlp-recommendation.md` §5.
 
 ---

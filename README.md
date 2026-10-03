@@ -126,7 +126,7 @@ op3nsrc/
 - [x] Week 1 — data collection (202 repos)
 - [x] Week 2 — cleaning + tables
 - [x] Week 2 — EDA (`notebooks/eda.ipynb`)
-- [x] Week 3 — repo classifier: TF-IDF + Naive Bayes, test top-5 accuracy 73% vs 6% baseline (`notebooks/classification.ipynb`)
+- [x] Week 3 — repo classifier: TF-IDF + Naive Bayes, test accuracy 75%, top-5 accuracy 88% vs 2% / 6% baseline (`notebooks/classification.ipynb`)
 - [x] Week 3 — recommender demo: GitHub user → repos + issues (`notebooks/recommender.ipynb`, dummy users)
 - [ ] Week 4 — web page
 - [ ] Week 4 — web app

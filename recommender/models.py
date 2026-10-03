@@ -4,6 +4,8 @@ Classifiers (profile text -> repo), all scikit-learn pipelines:
 - Most frequent repo        (DummyClassifier, the baseline)
 - TF-IDF + Naive Bayes      (ComplementNB, a classic text classifier)
 - TF-IDF + Logistic Regression
+  TF-IDF features = words + word pairs, plus character 3-5-grams (catch code
+  names like `strftime`, `useState`)
 - Sentence-BERT + Logistic Regression (pretrained all-MiniLM-L6-v2 embeddings)
 
 TextMatcher: TF-IDF cosine similarity, used to rank issues inside a
@@ -19,7 +21,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import ComplementNB
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import make_pipeline, make_union
 
 TOKENS = r"(?u)\b[a-zA-Z][a-zA-Z0-9+#.]+\b"     # keeps c++, c#, node.js
 
@@ -27,6 +29,25 @@ TOKENS = r"(?u)\b[a-zA-Z][a-zA-Z0-9+#.]+\b"     # keeps c++, c#, node.js
 def tfidf(**kw):
     return TfidfVectorizer(stop_words="english", sublinear_tf=True, min_df=2, max_df=0.5,
                            token_pattern=TOKENS, **kw)
+
+
+def text_features():
+    """Classifier features: word unigrams + bigrams, and character 3-5-grams."""
+    return make_union(
+        tfidf(ngram_range=(1, 2)),
+        TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True, min_df=2, max_df=0.5),
+    )
+
+
+# Settings chosen by cross-validation (notebooks/classification.ipynb, §3)
+NB_ALPHA = 0.1
+LR_C = 100
+
+# Small grids searched in the classification notebook
+PARAM_GRIDS = {
+    "TF-IDF + Naive Bayes": {"complementnb__alpha": [0.03, 0.1, 0.3, 1.0]},
+    "TF-IDF + Logistic Regression": {"logisticregression__C": [10, 30, 100]},
+}
 
 
 def _quiet_huggingface():
@@ -58,8 +79,8 @@ class SbertEncoder(BaseEstimator, TransformerMixin):
 def make_classifiers(include_sbert=True):
     models = {
         "Most frequent repo (baseline)": make_pipeline(tfidf(), DummyClassifier(strategy="most_frequent")),
-        "TF-IDF + Naive Bayes": make_pipeline(tfidf(), ComplementNB()),
-        "TF-IDF + Logistic Regression": make_pipeline(tfidf(), LogisticRegression(max_iter=2000, C=10)),
+        "TF-IDF + Naive Bayes": make_pipeline(text_features(), ComplementNB(alpha=NB_ALPHA)),
+        "TF-IDF + Logistic Regression": make_pipeline(text_features(), LogisticRegression(max_iter=3000, C=LR_C)),
     }
     if include_sbert:
         models["Sentence-BERT + Logistic Regression"] = make_pipeline(

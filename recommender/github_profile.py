@@ -7,6 +7,7 @@ user, repos, languages, pull_requests, issues, starred. Until the live fetch exi
 
 import json
 
+from .classification import BODY_CHARS
 from .data import ROOT, clean_text, name_words
 
 USERS = ROOT / "dummy_users"
@@ -41,7 +42,7 @@ def build_profile(gh):
         parts.append(" ".join([name_words(r["name"]), clean_text(r["description"]),
                                " ".join(r["topics"]), (r["language"] or "").lower()]))
     for pr in gh["pull_requests"]["items"]:
-        parts.append(" ".join([clean_text(pr["title"]), clean_text(pr["body"])[:300],
+        parts.append(" ".join([clean_text(pr["title"]), clean_text(pr["body"])[:BODY_CHARS],
                                name_words(_repo_name(pr["repository_url"]))]))
     for iss in gh["issues"]["items"]:
         parts.append(" ".join([clean_text(iss["title"]), name_words(_repo_name(iss["repository_url"]))]))

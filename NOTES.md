@@ -51,7 +51,7 @@ Real example — developer `0-wiz-0`, our complete knowledge about them:
 
 ```text
 merged PRs in our 202 repos ──┬─▶ 2.1 EDA summary        PRs + repo languages/topics + issue titles
-   (author = developer)       └─▶ 2.2 training text      PR text only, owner names removed, label = main repo
+   (author = developer)       └─▶ 2.2 training text      PR text + issue titles, templates & owner names removed, label = main repo
 
 a new user's own GitHub data ───▶ 2.3 app profile        bio, own repos, languages, PRs, issues, starred
    (dummy users for now)
@@ -75,14 +75,17 @@ so a model trained on it would just read the answer off the repo description.
 
 ### 2.2 Training text (built in `recommender/classification.py`)
 
-- **Text:** the developer's merged-PR titles + descriptions (first 500 characters of each).
-- **Removed:** owner names and `owner/repo` strings (see §3).
+- **Text:** the developer's merged-PR titles + descriptions (up to 2,000 characters each) + titles of issues
+  they opened in our data.
+- **Removed:** owner names and `owner/repo` strings, each repo's PR-template sentences, and very short
+  sentences such as "closes #3568." (see §3).
 - **Label:** the repo they merged most PRs into.
 
 ```text
-0-wiz-0 → text:  "fix strftime-related functions on netbsd. closes #3568. |
-                  cast char to unsigned char before passing to isspace. closes #3569."
-          label: jqlang/jq
+0-wiz-0 → text:  "fix strftime-related functions on netbsd. | cast char to unsigned char before passing to isspace. |
+                  bug: 2.5.2: error: expected declaration specifiers … | sphinx 9.0.4 breaks build of khard 0.20.0 |
+                  ctype(3) functions used unsafely | jq 1.8.2 self test failure on netbsd"
+          label: jqlang/jq        (the last four parts are titles of issues they opened)
 ```
 
 ### 2.3 App profile for a new user (built in `recommender/github_profile.py`)
@@ -95,7 +98,7 @@ own GitHub account:
 | `GET /users/{u}`                                    | bio                                                                      |
 | `GET /users/{u}/repos`                              | own repos — **forks skipped** — name, description, topics, main language |
 | `GET /repos/{o}/{r}/languages`                      | the user's top 5 languages by bytes of code (non-fork repos)             |
-| `GET /search/issues?q=author:{u}+type:pr+is:merged` | PR titles + first 300 chars of descriptions + target repo name           |
+| `GET /search/issues?q=author:{u}+type:pr+is:merged` | PR titles + first 2,000 chars of descriptions + target repo name         |
 | `GET /search/issues?q=author:{u}+type:issue`        | issue titles + target repo name                                          |
 | `GET /users/{u}/starred`                            | starred repos: name, description, topics, language (interests)           |
 
@@ -104,7 +107,7 @@ exists, this data comes from `dummy_users/*.json`, which have exactly these API 
 
 ### Why the three differ, and what that costs
 
-The model is **trained on 2.2** (PR text) but **used on 2.3** (mostly repos and starred projects). The texts
+The model is **trained on 2.2** (PR text + issue titles) but **used on 2.3** (mostly repos and starred projects). The texts
 look different, so live recommendations are looser than the test score. This is limitation #1 in the report.
 
 ---
@@ -124,6 +127,15 @@ skills. So `build_dataset` removes, from every text:
 Project and technology words (`react`, `tokio`, `jq`) are **kept**: a real user's profile contains those
 too, and they are legitimate skill signals. Check in the notebook: 0 profiles contain their own `owner/repo`.
 
+
+**PR templates are removed too.** Many repos have a PR template ("Thanks for contributing! Checklist: …").
+Those sentences identify the *repo*, not the developer, so the model could win by recognising templates.
+`build_dataset` removes every sentence that appears in **3 or more PRs of the same repo** (about 7% of PR
+text; 40% of PRs had some). Keeping them would add about 5 points of accuracy — earned the wrong way.
+Very short sentences (≤ 15 characters, e.g. "closes #3568.") are dropped as well; they carry no skill signal.
+
+**Features.** The text is turned into TF-IDF of **words + word pairs** and of **character 3–5-grams**.
+Character pieces help with code names (`strftime`, `useState`, `webcontents`) and their variants.
 ---
 
 ## 4. Why a standard random train/test split is valid
@@ -150,13 +162,17 @@ issue it fixes share almost the same words. That design needed a time-based spli
 
 | Metric             | Plain meaning                                                           | TF-IDF + NB (test) |
 | ------------------ | ----------------------------------------------------------------------- | ------------------ |
-| Accuracy           | the top prediction is the right repo                                    | 51%                |
-| **Top-5 accuracy** | the right repo is among the 5 we would show → **the app's real metric** | **73%**            |
-| Macro F1           | quality averaged per repo, small repos count as much as big ones        | 0.36               |
-| Weighted F1        | same, weighted by repo size                                             | 0.45               |
+| Accuracy           | the top prediction is the right repo                                    | 75%                |
+| **Top-5 accuracy** | the right repo is among the 5 we would show → **the app's real metric** | **88%**            |
+| Macro F1           | quality averaged per repo, small repos count as much as big ones        | 0.68               |
+| Weighted F1        | same, weighted by repo size                                             | 0.72               |
 
 Context: with 117 repos, guessing the most common repo gets 2% accuracy / 6% top-5. Macro F1 is lower than
 accuracy because small repos (5–6 developers, only 1 in the test set) are harder.
+
+**Settings** are tuned with the same cross-validation, on small grids (Naive Bayes smoothing `alpha`,
+Logistic Regression `C`), and chosen by **top-5 accuracy** because that is what the app shows. Chosen:
+`alpha = 0.1`, `C = 100`.
 
 ---
 
@@ -167,7 +183,8 @@ accuracy because small repos (5–6 developers, only 1 in the test set) are hard
 - **Sentence-BERT** encodes _general meaning_. "fix strftime on NetBSD" and "fix date parsing on Windows" look
   similar to it — useful for semantics, but it blurs the exact names that matter here. It also reads only the
   first ~256 tokens.
-- Result: TF-IDF + NB 73% top-5 vs Sentence-BERT + LR 68%.
+- Result: TF-IDF + NB 88% top-5 vs Sentence-BERT + LR 67%. With longer texts the gap grows: Sentence-BERT
+  still reads only the start, while TF-IDF uses every word.
 
 ---
 
@@ -285,3 +302,6 @@ Catches variants like `good-first-issue`, `e-easy`, `🌱 good first issue`, `st
 | 2026-10-02 | TF-IDF + Naive Bayes chosen                                                                                                                                                         | best cross-validation accuracy; best test top-5 accuracy                                          |
 | 2026-10-02 | Show repos by rank, not probability                                                                                                                                                 | NB probabilities are all ≈ 1%                                                                     |
 | 2026-10-02 | Implementation in `recommender/*.py`, notebooks only call it                                                                                                                        | cleaner notebooks, reusable code for the app                                                      |
+| 2026-10-02 | **Improved the classifier:** full PR descriptions (≤ 2,000 chars) + titles of issues the developer opened; TF-IDF of words + word pairs + character 3–5-grams; small CV grids (`alpha`, `C`) chosen by top-5 accuracy | test accuracy 0.51 → 0.75, top-5 0.73 → 0.88, macro F1 0.36 → 0.68 |
+| 2026-10-02 | Remove each repo's PR-template sentences (in ≥ 3 PRs of the same repo) from the training text | templates identify the repo, not the developer; they inflated accuracy by ~5 points |
+| 2026-10-02 | App profile uses the same PR-description length (2,000 chars) as training | keep training and app input as similar as possible |

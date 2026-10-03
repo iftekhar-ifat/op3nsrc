@@ -154,11 +154,11 @@ strings (`json.loads`). Running `clean.py` twice gives byte-identical files.
 | Profile                                                      | Built from                                                                                                                                                                                                 | Used for                            |
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
 | **EDA summary** (`developer_profiles.csv`)                   | all merged PRs of a PR author: languages and topics of the repos they contributed to, PR titles, issue titles → `experience_text`                                                                          | describing developers in EDA        |
-| **Training text** (built in `recommender/classification.py`) | the developer's merged-PR titles + bodies (first 500 chars each). **Owner names and `owner/repo` strings are removed** so the text does not contain the answer. Label = the repo they merged most PRs into | training and testing the classifier |
+| **Training text** (built in `recommender/classification.py`) | the developer's merged-PR titles + descriptions (up to 2,000 chars each, **repo PR-template sentences removed**) + titles of issues they opened. **Owner names and `owner/repo` strings are removed** so the text does not contain the answer. Label = the repo they merged most PRs into | training and testing the classifier |
 | **App profile** (`recommender/github_profile.py`)            | the user's GitHub data: bio, **own repos (forks skipped)** — name, description, topics, language — top 5 languages by bytes of code, merged-PR titles/bodies, opened-issue titles, starred repos           | recommending for a new user         |
 
 Why the app profile is different: a new user — especially a beginner — may have no merged PRs at all, so
-we also use their own repos and starred projects. The training data only has PR text. This difference is a
+we also use their own repos and starred projects. The training data only has PR text and issue titles. This difference is a
 known limitation (§10).
 
 **Dummy users** (`dummy_users/*.json`): three fictional users with exactly the structure of the GitHub API
@@ -181,7 +181,8 @@ responses, so the live fetch can replace them without other changes:
 | Rows         | 1,724 developers (one each)                                                                  |
 | Classes      | 117 repos (5–39 developers each, median 13)                                                  |
 | Split        | stratified random **80/20** → 1,379 train / 345 test                                         |
-| Model choice | 4-fold cross-validation on the training set                                                  |
+| Features     | TF-IDF of words + word pairs, plus character 3–5-grams                                       |
+| Settings     | small grids tuned with 4-fold cross-validation on the training set, chosen by top-5 accuracy |
 | Metrics      | accuracy, **top-5 accuracy** (true repo among the 5 we would recommend), macro / weighted F1 |
 
 **Models** (all standard scikit-learn pipelines, `recommender/models.py`):
@@ -189,15 +190,19 @@ responses, so the live fetch can replace them without other changes:
 | Model                                                        | Test accuracy | Test top-5 accuracy |
 | ------------------------------------------------------------ | ------------- | ------------------- |
 | Most frequent repo (baseline)                                | 2%            | 6%                  |
-| **TF-IDF + Naive Bayes** ← chosen (best in cross-validation) | 51%           | **73%**             |
-| TF-IDF + Logistic Regression                                 | 53%           | 70%                 |
-| Sentence-BERT + Logistic Regression                          | 44%           | 68%                 |
+| **TF-IDF + Naive Bayes** ← chosen (best in cross-validation) | 75%           | **88%**             |
+| TF-IDF + Logistic Regression                                 | 69%           | 84%                 |
+| Sentence-BERT + Logistic Regression                          | 41%           | 67%                 |
 
 - **TF-IDF** gives every word a weight: rare, specific words (`tokio`, `pydantic`, `webcontents`) count
   much more than common ones (`bug`, `error`).
 - **Naive Bayes / Logistic Regression** learn which words point to which repo.
 - **Sentence-BERT** turns text into a "meaning" vector; it did worse here because exact project and library
   names matter more than general meaning.
+- **How we got here:** the first version (PR text cut at 500 chars, single words, default settings) scored
+  51% / 73%. Using the full PR descriptions + issue titles, adding word pairs and character n-grams, and light
+  tuning raised it to 75% / 88%. Repo PR-template sentences are removed so the model can't win by
+  recognising templates (details in `NOTES.md` §3).
 - The chosen model is **retrained on all 1,724 developers** before it is used in the app.
 
 Results are saved in `results/test_results.csv`.
@@ -274,8 +279,8 @@ Then open the notebooks with the **Python (op3nsrc)** kernel, in this order: `ed
 
 ## 10. Limitations (for the report)
 
-1. **Training vs app text:** the classifier learns from PR text; a new user's profile also includes their own
-   repos and starred projects, so live recommendations are looser than the 73% test number.
+1. **Training vs app text:** the classifier learns from PR text and issue titles; a new user's profile also includes their own
+   repos and starred projects, so live recommendations are looser than the 88% test number.
 2. **Limited pool:** only 116 repos can be recommended (≥ 5 developers and open issues), from a fixed
    snapshot.
 3. **Issue suggestions are not evaluated** — they are a simple similarity ranking for convenience.

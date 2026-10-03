@@ -1,12 +1,14 @@
 """Repo recommendation as text classification: developer profile text -> repo.
 
 One row per developer:
-    text  = the developer's merged-PR titles + bodies
+    text  = the developer's merged-PR titles + bodies (repo PR-template sentences
+            removed) + titles of issues they opened
     label = the repo they merged most PRs into
 Rows are independent, so a standard stratified train/test split is used.
 """
 
 import re
+from collections import Counter
 
 import numpy as np
 import pandas as pd
@@ -14,8 +16,12 @@ from sklearn.metrics import accuracy_score, f1_score, top_k_accuracy_score
 from sklearn.model_selection import train_test_split
 
 MIN_DEVELOPERS = 5     # a repo needs at least this many developers to be a class
+BODY_CHARS = 2000      # use (almost) the full PR description; caps very long logs
+TEMPLATE_MIN_PRS = 3   # a sentence in >= 3 PRs of the same repo is PR-template boilerplate
 TEST_SIZE = 0.2
 SEED = 42
+
+_SENTENCE = re.compile(r"(?<=[.!?:])\s+")
 
 
 def _leak_pattern(repos):
@@ -32,14 +38,38 @@ def _leak_pattern(repos):
     return re.compile(r"\b(" + "|".join(sorted(names, key=len, reverse=True)) + r")\b")
 
 
+def _sentences(text):
+    return [s.strip() for s in _SENTENCE.split(text) if len(s.strip()) > 15]
+
+
+def _without_templates(prs):
+    """PR bodies with each repo's PR-template sentences removed.
+
+    Repos have PR templates ("Thanks for contributing! Checklist: ...").
+    Those sentences identify the repo, not the developer's skills, so they
+    would let the model recognise the template instead of the person.
+    """
+    sents = prs["body_clean"].map(_sentences)
+    template = {}
+    for repo, grp in sents.groupby(prs["repo_id"]):
+        counts = Counter(s for ss in grp for s in set(ss))
+        template[repo] = {s for s, n in counts.items() if n >= TEMPLATE_MIN_PRS}
+    return pd.Series([" ".join(s for s in ss if s not in template[r]) for ss, r in zip(sents, prs["repo_id"])],
+                     index=prs.index)
+
+
 def build_dataset(tables, min_developers=MIN_DEVELOPERS):
     """DataFrame with one row per developer: developer, text, repo (label), n_prs."""
-    prs, repos = tables["pull_requests"], tables["repositories"]
+    prs, repos, issues = tables["pull_requests"], tables["repositories"], tables["issues"]
     leak = _leak_pattern(repos)
+    bodies = _without_templates(prs).str[:BODY_CHARS]
+    issue_titles = issues.groupby("author_login")["title_clean"].apply(list)
 
     rows = []
     for login, grp in prs.groupby("author_login"):
-        text = " | ".join(grp["title_clean"] + ". " + grp["body_clean"].str[:500])
+        parts = list(grp["title_clean"] + ". " + bodies[grp.index])
+        parts += issue_titles.get(login, [])          # issues they opened (any repo in our data)
+        text = " | ".join(parts)
         rows.append({
             "developer": login,
             "text": " ".join(leak.sub(" ", text).split()),

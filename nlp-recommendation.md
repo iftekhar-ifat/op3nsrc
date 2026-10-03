@@ -28,7 +28,7 @@ Top 3 issues per repo + "Why" (shared words)
 
 | Text                          | Built from                                                                                                                                                     | Used in                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **Developer text (training)** | the developer's merged-PR titles + bodies (first 500 chars each); owner names and `owner/repo` strings removed so the label is not given away                  | classifier training / test       |
+| **Developer text (training)** | the developer's merged-PR titles + descriptions (up to 2,000 chars each, **repo PR-template sentences removed**) + titles of issues they opened; owner names and `owner/repo` strings removed so the label is not given away | classifier training / test       |
 | **Developer text (app)**      | the user's GitHub data: bio, own repos (forks skipped: name, description, topics, language), top languages by bytes, merged-PR and issue titles, starred repos | classifier input + issue ranking |
 | **Repo text**                 | name, primary language, topics, description, first 5,000 chars of the README                                                                                   | "Why" explanations               |
 | **Issue text**                | title + cleaned body (`final_text`) + the repo's name/language/topics/description                                                                              | issue ranking + "Why"            |
@@ -42,8 +42,8 @@ stop-word list and `max_df` handle common words.
 | Model                               | How it represents text                                                                     | Classifier                                                 |
 | ----------------------------------- | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | Baseline                            | —                                                                                          | always predicts the most frequent repo (`DummyClassifier`) |
-| **TF-IDF + Naive Bayes**            | `TfidfVectorizer` (unigrams, English stop words, `sublinear_tf`, `min_df=2`, `max_df=0.5`) | `ComplementNB`                                             |
-| TF-IDF + Logistic Regression        | same TF-IDF                                                                                | `LogisticRegression`                                       |
+| **TF-IDF + Naive Bayes**            | TF-IDF of words + word pairs (English stop words, `sublinear_tf`, `min_df=2`, `max_df=0.5`) **plus** TF-IDF of character 3–5-grams | `ComplementNB(alpha=0.1)` |
+| TF-IDF + Logistic Regression        | same TF-IDF features | `LogisticRegression(C=100)` |
 | Sentence-BERT + Logistic Regression | pretrained `all-MiniLM-L6-v2` sentence embeddings (384-d)                                  | `LogisticRegression`                                       |
 
 - **TF-IDF** weights words by how specific they are: rare words like `tokio` or `pydantic` count far
@@ -51,6 +51,8 @@ stop-word list and `max_df` handle common words.
 - **Sentence-BERT** encodes the meaning of a text; it needs no training (pretrained).
 - The TF-IDF `max_df=0.5` drops words that appear in more than half of the documents, such as issue-template
   headings ("expected behavior", "steps to reproduce").
+- **Word pairs** catch phrases ("async runtime"); **character 3–5-grams** catch code names and their parts
+  (`strftime`, `useState`, `webcontents`) even when they are written slightly differently.
 
 ## 4. Learning setup
 
@@ -60,7 +62,7 @@ stop-word list and `max_df` handle common words.
 | Label        | the repo they merged most PRs into                                                |
 | Classes      | repos with ≥ 5 developers → **117 repos, 1,724 developers**                       |
 | Split        | stratified random **80 / 20** train / test (`random_state = 42`)                  |
-| Model choice | 4-fold stratified cross-validation on the training set                            |
+| Settings + model choice | 4-fold stratified cross-validation on the training set; small grids (Naive Bayes `alpha` ∈ {0.03, 0.1, 0.3, 1}, Logistic Regression `C` ∈ {10, 30, 100}); chosen by **top-5 accuracy** |
 | Final model  | the CV winner (**TF-IDF + Naive Bayes**), retrained on all developers for the app |
 
 Rows are independent (each developer appears once), so a standard random split is valid.
@@ -73,13 +75,18 @@ Standard classification metrics on the test set (`notebooks/classification.ipynb
 | Model                               | Accuracy | Top-5 accuracy | Macro F1 |
 | ----------------------------------- | -------- | -------------- | -------- |
 | Most frequent repo (baseline)       | 0.02     | 0.06           | 0.00     |
-| **TF-IDF + Naive Bayes**            | 0.51     | **0.73**       | 0.36     |
-| TF-IDF + Logistic Regression        | 0.53     | 0.70           | 0.35     |
-| Sentence-BERT + Logistic Regression | 0.44     | 0.68           | 0.31     |
+| **TF-IDF + Naive Bayes**            | 0.75     | **0.88**       | 0.68     |
+| TF-IDF + Logistic Regression        | 0.69     | 0.84           | 0.55     |
+| Sentence-BERT + Logistic Regression | 0.41     | 0.67           | 0.28     |
 
 - **Accuracy:** the exact repo is the top prediction.
 - **Top-5 accuracy:** the true repo is among the 5 recommended — what the app shows.
 - **Macro F1:** average quality per repo (small repos count as much as big ones).
+
+**Improvement over the first version** (PR text cut at 500 chars, single words, default settings:
+ accuracy 0.51, top-5 0.73, macro F1 0.36): more text per developer, word pairs + character n-grams, and
+light tuning. Removing PR-template sentences costs about 5 points of accuracy but keeps the model honest —
+it must recognise the developer's work, not the repo's template.
 
 ## 6. Issue ranking inside a repo (`recommender/recommend.py`)
 
@@ -92,7 +99,7 @@ recommended. Titles that are only a template (e.g. "Bug:") are shown with the st
 
 ## 7. Limitations
 
-- Training text (PRs) differs from app text (own repos, starred projects), so live recommendations are
+- Training text (PRs + issue titles) differs from app text (own repos, starred projects), so live recommendations are
   less reliable than the test numbers.
 - Only the 117 repos with ≥ 5 developers can be recommended.
 - Issue suggestions are not evaluated; they are a convenience step.
