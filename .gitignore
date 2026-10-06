@@ -8,7 +8,7 @@ __pycache__/
 venv/
 
 # local raw dataset
-data/raw/
-data/
+**/data/raw/
+**/data/cleaned/
 TODO.md
 .DS_Store
