@@ -15,14 +15,11 @@ JSON_COLUMNS = {
     "repositories": ["topics", "languages"],
     "issues": ["labels", "linked_pr_ids"],
     "pull_requests": ["labels", "closes_issue_ids", "references_issue_ids", "closes_issue_ids_in_data"],
-    "developer_profiles": ["languages", "topics", "repos_contributed", "featured_repo_descs",
-                           "pr_titles", "issue_titles"],
 }
 TIME_COLUMNS = {
     "repositories": ["created_at", "pushed_at"],
     "issues": ["created_at", "updated_at", "closed_at"],
     "pull_requests": ["created_at", "merged_at"],
-    "developer_profiles": ["first_contribution_at", "last_contribution_at"],
 }
 BOOL_COLUMNS = {"issues": ["is_beginner_friendly", "is_help_wanted", "created_in_window"]}
 

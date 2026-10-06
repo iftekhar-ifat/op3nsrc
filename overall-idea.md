@@ -61,8 +61,8 @@ Enter GitHub username: [ octocat ]  → Find matches
 
 ```text
 GitHub username
-        ↓  1. Fetch the user's public GitHub data (profile, own repos, languages,
-        ↓     recent PRs/issues, starred repos) → one profile text
+        ↓  1. Fetch the user's public GitHub data (own repos, languages,
+        ↓     merged PRs) → one profile text
         ↓  2. A text classifier predicts which of our repos fit the profile → top 5 repos
         ↓  3. Inside each of those repos, rank its open issues by text similarity to the profile
         ↓     (small boost for `good first issue` / `help wanted`) → top 3 issues
@@ -96,9 +96,9 @@ train/test split**, model choice by cross-validation on the training set, and on
 
 Uses standard NLP techniques — **TF-IDF** and a small pretrained model (**Sentence-BERT**) — to represent developer text, a standard classifier to predict fitting repos, and text similarity to pick issues inside them.
 
-→ See **`nlp-recommendation.md`** for the full model implementation plan.
+→ See **`PROJECT_OVERVIEW.md`** for how the whole project works (data, cleaning, model, results).
 
-→ See **`data-collection-and-processing.md`** for the step-by-step data collection and preprocessing workflow.
+→ See **`NOTES.md`** for the details behind each step and the decision log.
 
 ---
 

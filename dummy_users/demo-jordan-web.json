@@ -1,193 +1,56 @@
 {
   "_dummy": true,
-  "_note": "Fictional user for development. Each key mirrors one GitHub REST API response (see _sources).",
+  "_note": "Fictional user for development. Only the fields the profile uses are kept; each key is a trimmed GitHub REST API response (see _sources).",
   "_sources": {
-    "user": "GET /users/{username}",
-    "repos": "GET /users/{username}/repos?type=owner&sort=pushed&per_page=100",
-    "languages": "GET /repos/{owner}/{repo}/languages  (one call per repo in `repos`, keyed by full_name)",
-    "pull_requests": "GET /search/issues?q=author:{username}+type:pr+is:merged&sort=created&per_page=50",
-    "issues": "GET /search/issues?q=author:{username}+type:issue&sort=created&per_page=50",
-    "starred": "GET /users/{username}/starred?per_page=50"
+    "user": "GET /users/{username}  (fields kept: login, name)",
+    "repos": "GET /users/{username}/repos?type=owner&sort=pushed&per_page=100  (fields kept: name, full_name, description, topics, language, fork)",
+    "languages": "GET /repos/{owner}/{repo}/languages  (one call per repo, keyed by full_name; bytes of code per language)",
+    "pull_requests": "GET /search/issues?q=author:{username}+type:pr+is:merged  (fields kept: title, body, repository_url)"
   },
   "user": {
     "login": "demo-jordan-web",
-    "id": 100071,
-    "node_id": "U_dummy100071",
-    "avatar_url": "https://avatars.githubusercontent.com/u/100071?v=4",
-    "html_url": "https://github.com/demo-jordan-web",
-    "type": "User",
-    "site_admin": false,
-    "name": "Jordan (demo)",
-    "company": null,
-    "blog": "",
-    "location": null,
-    "email": null,
-    "hireable": null,
-    "bio": "Learning web development. Looking for my first open-source contribution!",
-    "twitter_username": null,
-    "public_repos": 4,
-    "public_gists": 0,
-    "followers": 3,
-    "following": 12,
-    "created_at": "2025-09-01T10:00:00Z",
-    "updated_at": "2026-09-28T10:00:00Z"
+    "name": "Jordan (demo)"
   },
   "repos": [
     {
-      "id": 100054,
-      "node_id": "R_dummy100054",
       "name": "portfolio",
       "full_name": "demo-jordan-web/portfolio",
-      "private": false,
-      "owner": {
-        "login": "demo-jordan-web",
-        "id": 100055,
-        "type": "User",
-        "html_url": "https://github.com/demo-jordan-web"
-      },
-      "html_url": "https://github.com/demo-jordan-web/portfolio",
       "description": "My personal portfolio website",
-      "fork": false,
-      "url": "https://api.github.com/repos/demo-jordan-web/portfolio",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 0,
-      "watchers_count": 0,
-      "language": "HTML",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
       "topics": [],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-22T19:00:00Z",
-      "pushed_at": "2026-09-22T19:00:00Z"
+      "language": "HTML",
+      "fork": false
     },
     {
-      "id": 100056,
-      "node_id": "R_dummy100056",
       "name": "react-todo",
       "full_name": "demo-jordan-web/react-todo",
-      "private": false,
-      "owner": {
-        "login": "demo-jordan-web",
-        "id": 100057,
-        "type": "User",
-        "html_url": "https://github.com/demo-jordan-web"
-      },
-      "html_url": "https://github.com/demo-jordan-web/react-todo",
       "description": "Todo list app with React hooks and localStorage",
-      "fork": false,
-      "url": "https://api.github.com/repos/demo-jordan-web/react-todo",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 1,
-      "watchers_count": 1,
-      "language": "JavaScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
       "topics": [
         "react",
         "javascript",
         "beginner"
       ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-05T16:00:00Z",
-      "pushed_at": "2026-09-05T16:00:00Z"
+      "language": "JavaScript",
+      "fork": false
     },
     {
-      "id": 100058,
-      "node_id": "R_dummy100058",
       "name": "weather-app",
       "full_name": "demo-jordan-web/weather-app",
-      "private": false,
-      "owner": {
-        "login": "demo-jordan-web",
-        "id": 100059,
-        "type": "User",
-        "html_url": "https://github.com/demo-jordan-web"
-      },
-      "html_url": "https://github.com/demo-jordan-web/weather-app",
       "description": "Weather app using the OpenWeather API, built with Vite and TypeScript",
-      "fork": false,
-      "url": "https://api.github.com/repos/demo-jordan-web/weather-app",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 0,
-      "watchers_count": 0,
-      "language": "TypeScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
       "topics": [
         "vite",
         "typescript",
         "api"
       ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-08-14T13:00:00Z",
-      "pushed_at": "2026-08-14T13:00:00Z"
+      "language": "TypeScript",
+      "fork": false
     },
     {
-      "id": 100060,
-      "node_id": "R_dummy100060",
       "name": "js-calculator",
       "full_name": "demo-jordan-web/js-calculator",
-      "private": false,
-      "owner": {
-        "login": "demo-jordan-web",
-        "id": 100061,
-        "type": "User",
-        "html_url": "https://github.com/demo-jordan-web"
-      },
-      "html_url": "https://github.com/demo-jordan-web/js-calculator",
       "description": "Calculator in vanilla JavaScript and CSS grid",
-      "fork": false,
-      "url": "https://api.github.com/repos/demo-jordan-web/js-calculator",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 0,
-      "watchers_count": 0,
-      "language": "JavaScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
       "topics": [],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-04-01T10:00:00Z",
-      "pushed_at": "2026-04-01T10:00:00Z"
+      "language": "JavaScript",
+      "fork": false
     }
   ],
   "languages": {
@@ -214,209 +77,6 @@
   },
   "pull_requests": {
     "total_count": 0,
-    "incomplete_results": false,
     "items": []
-  },
-  "issues": {
-    "total_count": 1,
-    "incomplete_results": false,
-    "items": [
-      {
-        "url": "https://api.github.com/repos/vitejs/vite/issues/20510",
-        "repository_url": "https://api.github.com/repos/vitejs/vite",
-        "html_url": "https://github.com/vitejs/vite/issues/20510",
-        "id": 100062,
-        "node_id": "I_dummy100062",
-        "number": 20510,
-        "title": "Docs: env variables page unclear about VITE_ prefix in TypeScript",
-        "user": {
-          "login": "demo-jordan-web",
-          "id": 0,
-          "type": "User"
-        },
-        "labels": [
-          {
-            "name": "documentation"
-          }
-        ],
-        "state": "closed",
-        "locked": false,
-        "comments": 2,
-        "created_at": "2026-08-20T10:00:00Z",
-        "updated_at": "2026-08-25T10:00:00Z",
-        "closed_at": "2026-08-25T10:00:00Z",
-        "author_association": "NONE",
-        "body": "As a beginner I could not find how to type import.meta.env variables."
-      }
-    ]
-  },
-  "starred": [
-    {
-      "id": 100063,
-      "node_id": "R_dummy100063",
-      "name": "react",
-      "full_name": "facebook/react",
-      "private": false,
-      "owner": {
-        "login": "facebook",
-        "id": 100064,
-        "type": "User",
-        "html_url": "https://github.com/facebook"
-      },
-      "html_url": "https://github.com/facebook/react",
-      "description": "The library for web and native user interfaces.",
-      "fork": false,
-      "url": "https://api.github.com/repos/facebook/react",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 235000,
-      "watchers_count": 235000,
-      "language": "JavaScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
-      "topics": [
-        "react",
-        "javascript",
-        "ui",
-        "frontend"
-      ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-01T12:00:00Z",
-      "pushed_at": "2026-09-01T12:00:00Z"
-    },
-    {
-      "id": 100065,
-      "node_id": "R_dummy100065",
-      "name": "vite",
-      "full_name": "vitejs/vite",
-      "private": false,
-      "owner": {
-        "login": "vitejs",
-        "id": 100066,
-        "type": "User",
-        "html_url": "https://github.com/vitejs"
-      },
-      "html_url": "https://github.com/vitejs/vite",
-      "description": "Next generation frontend tooling. It's fast!",
-      "fork": false,
-      "url": "https://api.github.com/repos/vitejs/vite",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 72000,
-      "watchers_count": 72000,
-      "language": "TypeScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
-      "topics": [
-        "vite",
-        "frontend",
-        "build-tool"
-      ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-01T12:00:00Z",
-      "pushed_at": "2026-09-01T12:00:00Z"
-    },
-    {
-      "id": 100067,
-      "node_id": "R_dummy100067",
-      "name": "bootstrap",
-      "full_name": "twbs/bootstrap",
-      "private": false,
-      "owner": {
-        "login": "twbs",
-        "id": 100068,
-        "type": "User",
-        "html_url": "https://github.com/twbs"
-      },
-      "html_url": "https://github.com/twbs/bootstrap",
-      "description": "The most popular HTML, CSS, and JavaScript framework for developing responsive, mobile first projects on the web.",
-      "fork": false,
-      "url": "https://api.github.com/repos/twbs/bootstrap",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 172000,
-      "watchers_count": 172000,
-      "language": "MDX",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
-      "topics": [
-        "css",
-        "html",
-        "javascript",
-        "bootstrap"
-      ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-01T12:00:00Z",
-      "pushed_at": "2026-09-01T12:00:00Z"
-    },
-    {
-      "id": 100069,
-      "node_id": "R_dummy100069",
-      "name": "ui",
-      "full_name": "shadcn-ui/ui",
-      "private": false,
-      "owner": {
-        "login": "shadcn-ui",
-        "id": 100070,
-        "type": "User",
-        "html_url": "https://github.com/shadcn-ui"
-      },
-      "html_url": "https://github.com/shadcn-ui/ui",
-      "description": "A set of beautifully-designed, accessible components.",
-      "fork": false,
-      "url": "https://api.github.com/repos/shadcn-ui/ui",
-      "homepage": null,
-      "size": 240,
-      "stargazers_count": 90000,
-      "watchers_count": 90000,
-      "language": "TypeScript",
-      "has_issues": true,
-      "forks_count": 0,
-      "archived": false,
-      "disabled": false,
-      "open_issues_count": 0,
-      "license": {
-        "key": "mit",
-        "spdx_id": "MIT"
-      },
-      "topics": [
-        "react",
-        "ui",
-        "components",
-        "tailwindcss"
-      ],
-      "visibility": "public",
-      "default_branch": "main",
-      "created_at": "2025-01-10T09:00:00Z",
-      "updated_at": "2026-09-01T12:00:00Z",
-      "pushed_at": "2026-09-01T12:00:00Z"
-    }
-  ]
+  }
 }

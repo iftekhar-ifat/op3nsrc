@@ -4,14 +4,10 @@ Usage:
     python3 data_collection/main.py                     # everything
     python3 data_collection/main.py --step repos        # just repo metadata
     python3 data_collection/main.py --step issues_and_prs   # just issues + PRs
-    python3 data_collection/main.py --step readmes      # re-fetch missing/broken READMEs only
 
 Steps run in order and each one is also runnable standalone:
     1. repos           -> collect_repos.collect_repos()
     2. issues_and_prs  -> collect_issues_and_prs.collect_issues_and_prs()
-
-Repair step (not part of the full run, `repos` already fetches READMEs):
-    readmes         -> collect_repos.collect_readmes()
 """
 
 import argparse
@@ -23,9 +19,7 @@ from github_client import RAW, REPO_LIST
 STEPS = {
     "repos": ("collect_repos", "collect_repos", "repo metadata (info, README, languages, topics)"),
     "issues_and_prs": ("collect_issues_and_prs", "collect_issues_and_prs", "issues + pull requests (last 3 months)"),
-    "readmes": ("collect_repos", "collect_readmes", "re-fetch missing/broken READMEs"),
 }
-FULL_RUN = ["repos", "issues_and_prs"]
 
 
 def check_prereqs():
@@ -68,7 +62,7 @@ def main() -> None:
         run_step(args.step)
         return
 
-    for name in FULL_RUN:
+    for name in STEPS:
         run_step(name)
 
     print("\nAll steps finished. Verify with: ls", RAW)

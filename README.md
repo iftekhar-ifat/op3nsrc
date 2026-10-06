@@ -76,9 +76,8 @@ Current dataset (collection window: issues/PRs active since 2026-06-24):
 | `repositories.csv`          | 202    | Repo description, cleaned README, topics, languages, stars              |
 | `issues.csv`                | 15,053 | Issues; `final_text` is the NLP input (7,453 open, 210 beginner-friendly) |
 | `pull_requests.csv`         | 4,003  | Merged PRs that reference an issue (1,821 close an issue in our data)   |
-| `developer_profiles.csv`    | 1,843  | One row per PR author (languages, topics, PR titles); used in EDA       |
 
-Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON strings (`json.loads`).
+Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON strings (`json.loads`). All columns: [`data_collection/README.md`](data_collection/README.md#output-tables-datacleaned).
 
 17 repos from the original 219 were dropped: 12 have GitHub Issues disabled (django, postgres, git, mongo, kafka, flink, zookeeper, hibernate-orm, ruby, FFmpeg, emacs, calibre) and 5 are archived/inactive (minio, vue, zig, jinja, httpx).
 
@@ -90,9 +89,6 @@ op3nsrc/
 ├── PROJECT_OVERVIEW.md                  # start here: the whole project end to end
 ├── NOTES.md                             # details: profiles, leakage, split, metrics, "Why", decision log
 ├── overall-idea.md                      # project idea, motivation, timeline
-├── data-collection-task.md              # Week 1 how-to (collection)
-├── data-collection-and-processing.md    # data model, cleaning rules, tables
-├── nlp-recommendation.md                # model plan (TF-IDF, SBERT, evaluation)
 ├── notebooks/                           # run things + show results (implementation is in recommender/)
 │   ├── eda.ipynb                        # exploratory analysis + key findings
 │   ├── classification.ipynb             # dataset, train/test split, model comparison, test metrics
@@ -118,7 +114,7 @@ op3nsrc/
     ├── collect_repos.py                 # repo info, README, languages, topics
     ├── collect_issues_and_prs.py        # issues + merged PRs (last 3 months)
     ├── clean.py                         # raw JSON → cleaned tables
-    └── find_repos.py                    # search helper for picking repos
+    └── README.md                        # running the collection, cleaning rules, table columns
 ```
 
 ## Status

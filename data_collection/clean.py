@@ -1,4 +1,4 @@
-"""Clean the raw GitHub data and build the tables for EDA + the NLP models.
+"""Clean the raw GitHub data and build the tables for EDA and the recommender.
 
 Run (offline, no GitHub access needed):
     python3 data_collection/clean.py
@@ -8,7 +8,6 @@ Writes data/cleaned/
     repositories.csv           one row per repo
     issues.csv                 one row per issue (final_text = cleaned title + body)
     pull_requests.csv          one row per merged PR that links an issue
-    developer_profiles.csv     one row per PR author (summary used in EDA)
 
 Conventions:
     - repo_id  = name in repo_list.csv ("owner/repo"). Some repos were renamed
@@ -17,13 +16,13 @@ Conventions:
     - list columns are stored as JSON strings -> json.loads() in pandas.
     - empty text is written as "" -> read with
       pd.read_csv(path, keep_default_na=False) so it stays "" instead of NaN.
-    - Raw files are never modified (see data-collection-and-processing.md §5).
+    - Raw files are never modified; every fix happens here, so the pipeline can be re-run.
 """
 
 import csv
 import json
 import re
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -37,7 +36,7 @@ SINCE = "2026-06-24T00:00:00Z"   # collection window start (same as collector)
 README_MAX_CHARS = 20_000        # long READMEs add little beyond the intro
 
 # ---------------------------------------------------------------------------
-# Text cleaning (data-collection-and-processing.md §6.2)
+# Text cleaning
 # Light on purpose: no stemming / stopwords here; the TF-IDF baseline does that
 # itself, and Sentence-BERT works better on natural text.
 # ---------------------------------------------------------------------------
@@ -74,7 +73,7 @@ def clean_text(raw):
 
 
 # ---------------------------------------------------------------------------
-# PR -> issue links (§4.5)
+# PR -> issue links
 # GitHub's closing keywords: close(s/d), fix(es/ed), resolve(s/d).
 # "refs #N" only mentions an issue, so it is kept as a reference but is NOT
 # used as a positive label.
@@ -199,14 +198,13 @@ def build_repositories(repo_ids):
             "readme_clean": clean_text(readme)[:README_MAX_CHARS],
             "topics": jdump([t.lower() for t in topics]),
             "primary_language": (info.get("language") or "").lower(),
-            # language -> share of bytes, largest first (§6.1 keeps the byte info)
+            # language -> share of bytes, largest first
             "languages": jdump({k.lower(): round(v / total, 4) for k, v in
                                 sorted(langs.items(), key=lambda kv: -kv[1])}),
             "stars": info.get("stargazers_count"),
             "forks": info.get("forks_count"),
             "open_issues": info.get("open_issues_count"),
-            "is_archived": info.get("archived", False),
-            "license": ((info.get("license") or {}).get("spdx_id") or ""),
+            "is_archived": info.get("archived", False),   # used to drop archived repos, then removed
             "created_at": info.get("created_at"),
             "pushed_at": info.get("pushed_at"),
             "html_url": info.get("html_url"),
@@ -228,7 +226,6 @@ def build_issues(repo_ids):
             labels = [normalize_label(l["name"]) for l in rec.get("labels", [])]
             title_clean = clean_text(rec.get("title"))
             body_clean = clean_text(rec.get("body"))
-            issue_type = rec.get("type")
             rows.append({
                 "issue_id": f"{rid}#{rec['number']}",
                 "repo_id": rid,
@@ -236,23 +233,19 @@ def build_issues(repo_ids):
                 "title": rec.get("title") or "",
                 "title_clean": title_clean,
                 "body_clean": body_clean,
-                # title + body, or title alone when the body is empty (§6.2)
+                # title + body, or title alone when the body is empty
                 "final_text": f"{title_clean}. {body_clean}" if body_clean else title_clean,
                 "labels": jdump(labels),
                 "is_beginner_friendly": is_beginner(labels),
                 "is_help_wanted": is_help_wanted(labels),
-                "issue_type": (issue_type or {}).get("name", "").lower() if isinstance(issue_type, dict) else "",
                 "state": rec.get("state"),
                 "state_reason": rec.get("state_reason") or "",
                 "created_at": rec.get("created_at"),
                 "updated_at": rec.get("updated_at"),
                 "closed_at": rec.get("closed_at"),
                 "created_in_window": (rec.get("created_at") or "") >= SINCE,
-                "comment_count": rec.get("comments", 0),
-                "reactions": (rec.get("reactions") or {}).get("total_count", 0),
                 "author_login": login,
                 "author_association": rec.get("author_association", ""),
-                "assignee_count": len(rec.get("assignees") or []),
                 "html_url": rec.get("html_url"),
             })
     df = pd.DataFrame(rows)
@@ -297,7 +290,7 @@ def build_pull_requests(repo_ids, repos_df):
 
 
 def add_issue_links(issues, prs):
-    """Fill linked_pr_ids on issues and link_verified on PRs (§6.1 step 6)."""
+    """Fill linked_pr_ids on issues and closes_issue_ids_in_data on PRs."""
     known = set(issues["issue_id"])
     linked = defaultdict(list)
     verified = []
@@ -307,55 +300,8 @@ def add_issue_links(issues, prs):
         for i in ids:
             linked[i].append(pr.pr_id)
     prs["closes_issue_ids_in_data"] = [jdump(v) for v in verified]
-    prs["link_verified"] = [bool(v) for v in verified]
     issues["linked_pr_ids"] = issues["issue_id"].map(lambda i: jdump(linked.get(i, [])))
     return issues, prs
-
-
-def build_developer_profiles(prs, issues, repos):
-    """One row per PR author; experience_text summarises their contributions (used in EDA)."""
-    repo_info = repos.set_index("repo_id")
-    issues_by_author = issues.groupby("author_login")["title_clean"].apply(list)
-    rows = []
-    for login, grp in prs.sort_values("merged_at").groupby("author_login"):
-        lang_weight, topic_count = Counter(), Counter()
-        for rid, n in grp["repo_id"].value_counts().items():
-            for lang, share in json.loads(repo_info.at[rid, "languages"]).items():
-                lang_weight[lang] += share * n
-            for t in json.loads(repo_info.at[rid, "topics"]):
-                topic_count[t] += n
-        languages = [l for l, w in lang_weight.most_common() if w >= 0.1][:8]
-        topics = [t for t, _ in topic_count.most_common(15)]
-        repos_contrib = list(grp["repo_id"].unique())
-        repo_descs = [repo_info.at[r, "description_clean"] for r in repos_contrib]
-        pr_titles = list(grp["title_clean"])
-        issue_titles = issues_by_author.get(login, [])
-        experience_text = " | ".join(
-            part for part in [
-                " ".join(languages),
-                " ".join(topics),
-                " | ".join(repo_descs),
-                " | ".join(pr_titles),
-                " | ".join(issue_titles),
-            ] if part
-        )
-        rows.append({
-            "developer_id": login,
-            "login": login,
-            "languages": jdump(languages),
-            "topics": jdump(topics),
-            "repos_contributed": jdump(repos_contrib),
-            "featured_repo_descs": jdump(repo_descs),
-            "pr_titles": jdump(pr_titles),
-            "issue_titles": jdump(list(issue_titles)),
-            "experience_text": experience_text,
-            "merged_pr_count": len(grp),
-            "repo_count": len(repos_contrib),
-            "issues_opened": len(issue_titles),
-            "first_contribution_at": grp["merged_at"].min(),
-            "last_contribution_at": grp["merged_at"].max(),
-        })
-    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -365,19 +311,17 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
 
     repos = build_repositories(repo_ids)
-    repos = repos[~repos["is_archived"]]
+    repos = repos[~repos["is_archived"]].drop(columns="is_archived")
     repo_ids = list(repos["repo_id"])
 
     issues = build_issues(repo_ids)
     prs = build_pull_requests(repo_ids, repos)
     issues, prs = add_issue_links(issues, prs)
-    devs = build_developer_profiles(prs, issues, repos)
 
     tables = {
         "repositories": repos,
         "issues": issues,
         "pull_requests": prs,
-        "developer_profiles": devs,
     }
     for name, df in tables.items():
         df.to_csv(OUT / f"{name}.csv", index=False)
@@ -390,9 +334,9 @@ def main():
           f"help wanted {int(issues['is_help_wanted'].sum())}, "
           f"created before window {int((~issues['created_in_window']).sum())})")
     print(f"  pull_requests         {len(prs):>6}  "
-          f"(closing link to an issue in our data: {int(prs['link_verified'].sum())})")
-    print(f"  developer_profiles    {len(devs):>6}  "
-          f"(1 PR: {int((devs['merged_pr_count'] == 1).sum())})")
+          f"(closing link to an issue in our data: "
+          f"{int((prs['closes_issue_ids_in_data'] != '[]').sum())}, "
+          f"authors {prs['author_login'].nunique()})")
 
 
 if __name__ == "__main__":

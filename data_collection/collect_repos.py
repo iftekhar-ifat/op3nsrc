@@ -5,7 +5,6 @@ Run standalone:
 
 Or through the orchestrator:
     python3 data_collection/main.py --step repos
-    python3 data_collection/main.py --step readmes   # only re-fetch missing/broken READMEs
 
 Saves into:
     data/raw/repos/<owner>__<repo>.json
@@ -22,11 +21,6 @@ from github_client import RAW, REPO_LIST, get, get_text
 (RAW / "repos").mkdir(parents=True, exist_ok=True)
 (RAW / "readmes").mkdir(parents=True, exist_ok=True)
 
-# Old runs guessed README.md on raw.githubusercontent.com and saved this
-# error page when the file had another name (README.rst, readme.md, ...).
-BROKEN_README = "404: Not Found"
-
-
 def _load_repo_list():
     if not REPO_LIST.exists():
         raise SystemExit(
@@ -42,14 +36,6 @@ def _is_symlink_target(text):
     """True if the README body is only a relative path like 'docs/README.md'."""
     t = text.strip()
     return "\n" not in t and " " not in t and len(t) < 200 and t.lower().endswith((".md", ".rst", ".txt"))
-
-
-def _needs_readme(path):
-    """README missing, saved as a 404 page, or saved as a bare symlink target."""
-    if not path.exists():
-        return True
-    text = path.read_text(errors="ignore")
-    return text.startswith(BROKEN_README) or _is_symlink_target(text)
 
 
 def _fetch_readme(full, stem):
@@ -100,30 +86,6 @@ def collect_repos() -> int:
         except Exception as exc:
             print(f"  !!! failed on {full}: {exc} (skipping repo)")
 
-    return len(repos)
-
-
-def collect_readmes() -> int:
-    """Re-fetch only READMEs that are missing, a 404 page, or a symlink target."""
-    repos = _load_repo_list()
-    fixed = 0
-
-    for one in repos:
-        full = one["full_name"]
-        stem = full.replace("/", "__")
-        path = RAW / "readmes" / f"{stem}.md"
-        if not _needs_readme(path):
-            continue
-        try:
-            _fetch_readme(full, stem)
-            fixed += 1
-            print("  readme fixed:", full)
-        except SystemExit:
-            raise
-        except Exception as exc:
-            print(f"  !!! failed on {full}: {exc} (skipping repo)")
-
-    print(f"  {fixed} READMEs re-fetched")
     return len(repos)
 
 

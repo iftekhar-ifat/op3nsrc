@@ -1,8 +1,9 @@
 """Turn a user's GitHub data into one profile text.
 
-Input has the structure of the GitHub REST API responses (see dummy_users/README.md):
-user, repos, languages, pull_requests, issues, starred. Until the live fetch exists,
-`load_user` reads the dummy users.
+Input: trimmed GitHub REST API responses (see dummy_users/README.md) with four keys:
+user (login), repos (own repos: name, description, topics, language, fork),
+languages (bytes per language per repo) and pull_requests (merged PRs: title, body).
+Until the live fetch exists, `load_user` reads the dummy users.
 """
 
 import json
@@ -37,18 +38,13 @@ def build_profile(gh):
             lang_bytes[lang] = lang_bytes.get(lang, 0) + n
     top_langs = [l.lower() for l, _ in sorted(lang_bytes.items(), key=lambda kv: -kv[1])[:5]]
 
-    parts = [clean_text(gh["user"].get("bio")), " ".join(top_langs)]
+    parts = [" ".join(top_langs)]
     for r in own:
         parts.append(" ".join([name_words(r["name"]), clean_text(r["description"]),
                                " ".join(r["topics"]), (r["language"] or "").lower()]))
     for pr in gh["pull_requests"]["items"]:
         parts.append(" ".join([clean_text(pr["title"]), clean_text(pr["body"])[:BODY_CHARS],
                                name_words(_repo_name(pr["repository_url"]))]))
-    for iss in gh["issues"]["items"]:
-        parts.append(" ".join([clean_text(iss["title"]), name_words(_repo_name(iss["repository_url"]))]))
-    for r in gh["starred"]:
-        parts.append(" ".join([name_words(r["full_name"]), clean_text(r["description"]),
-                               " ".join(r["topics"]), (r["language"] or "").lower()]))
 
     summary = {
         "login": gh["user"]["login"],
@@ -56,7 +52,5 @@ def build_profile(gh):
         "forks skipped": len(gh["repos"]) - len(own),
         "top languages": ", ".join(top_langs),
         "merged PRs": gh["pull_requests"]["total_count"],
-        "issues opened": gh["issues"]["total_count"],
-        "starred": len(gh["starred"]),
     }
     return " | ".join(p for p in parts if p), summary

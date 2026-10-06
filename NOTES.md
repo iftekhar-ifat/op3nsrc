@@ -8,11 +8,10 @@ Contents:
 
 - [Op3nSrc — Design Notes](#op3nsrc--design-notes)
   - [1. Who counts as a "developer"](#1-who-counts-as-a-developer)
-  - [2. Developer profiles — three kinds](#2-developer-profiles--three-kinds)
-    - [2.1 EDA summary — `developer_profiles.csv` (built in `data_collection/clean.py`)](#21-eda-summary--developer_profilescsv-built-in-data_collectioncleanpy)
-    - [2.2 Training text (built in `recommender/classification.py`)](#22-training-text-built-in-recommenderclassificationpy)
-    - [2.3 App profile for a new user (built in `recommender/github_profile.py`)](#23-app-profile-for-a-new-user-built-in-recommendergithub_profilepy)
-    - [Why the three differ, and what that costs](#why-the-three-differ-and-what-that-costs)
+  - [2. Developer profiles — two kinds](#2-developer-profiles--two-kinds)
+    - [2.1 Training text (built in `recommender/classification.py`)](#21-training-text-built-in-recommenderclassificationpy)
+    - [2.2 App profile for a new user (built in `recommender/github_profile.py`)](#22-app-profile-for-a-new-user-built-in-recommendergithub_profilepy)
+    - [Why the two differ, and what that costs](#why-the-two-differ-and-what-that-costs)
   - [3. The classifier dataset and how we avoid giving away the answer](#3-the-classifier-dataset-and-how-we-avoid-giving-away-the-answer)
   - [4. Why a standard random train/test split is valid](#4-why-a-standard-random-traintest-split-is-valid)
   - [5. How the model is chosen and how to read the metrics](#5-how-the-model-is-chosen-and-how-to-read-the-metrics)
@@ -47,33 +46,17 @@ Real example — developer `0-wiz-0`, our complete knowledge about them:
 
 ---
 
-## 2. Developer profiles — three kinds
+## 2. Developer profiles — two kinds
 
 ```text
-merged PRs in our 202 repos ──┬─▶ 2.1 EDA summary        PRs + repo languages/topics + issue titles
-   (author = developer)       └─▶ 2.2 training text      PR text + issue titles, templates & owner names removed, label = main repo
+merged PRs in our 202 repos ───▶ 2.1 training text      PR text + issue titles, templates & owner names removed, label = main repo
+   (author = developer)
 
-a new user's own GitHub data ───▶ 2.3 app profile        bio, own repos, languages, PRs, issues, starred
+a new user's own GitHub data ───▶ 2.2 app profile        own repos, languages, merged PRs
    (dummy users for now)
 ```
 
-### 2.1 EDA summary — `developer_profiles.csv` (built in `data_collection/clean.py`)
-
-- **Languages / topics:** taken from the _repos the developer contributed to_, weighted by how many PRs they
-  made there (language share in the repo × number of PRs; tiny weights dropped; max 8 languages / 15 topics).
-- **PR titles** they wrote, **issue titles** they opened, and descriptions of their repos.
-- All joined into `experience_text`.
-
-```text
-0-wiz-0 → languages: c, m4, shell | topics: jq | repos: jqlang/jq | merged PRs: 2
-experience_text: "c m4 shell | jq | command-line json processor | cast char to unsigned char … |
-                  fix strftime-related functions on netbsd | jq 1.8.2 self test failure on netbsd | …"
-```
-
-**Used only for EDA.** Not used by the model: its languages and topics come _from the label repo itself_,
-so a model trained on it would just read the answer off the repo description.
-
-### 2.2 Training text (built in `recommender/classification.py`)
+### 2.1 Training text (built in `recommender/classification.py`)
 
 - **Text:** the developer's merged-PR titles + descriptions (up to 2,000 characters each) + titles of issues
   they opened in our data.
@@ -88,26 +71,27 @@ so a model trained on it would just read the answer off the repo description.
           label: jqlang/jq        (the last four parts are titles of issues they opened)
 ```
 
-### 2.3 App profile for a new user (built in `recommender/github_profile.py`)
+### 2.2 App profile for a new user (built in `recommender/github_profile.py`)
 
 A new user may have **no PRs in our repos at all** (especially beginners), so their profile comes from their
 own GitHub account:
 
 | GitHub API response                                 | What goes into the profile                                               |
 | --------------------------------------------------- | ------------------------------------------------------------------------ |
-| `GET /users/{u}`                                    | bio                                                                      |
 | `GET /users/{u}/repos`                              | own repos — **forks skipped** — name, description, topics, main language |
 | `GET /repos/{o}/{r}/languages`                      | the user's top 5 languages by bytes of code (non-fork repos)             |
 | `GET /search/issues?q=author:{u}+type:pr+is:merged` | PR titles + first 2,000 chars of descriptions + target repo name         |
-| `GET /search/issues?q=author:{u}+type:issue`        | issue titles + target repo name                                          |
-| `GET /users/{u}/starred`                            | starred repos: name, description, topics, language (interests)           |
 
 Forks are skipped because a fork contains someone else's code, not the user's skills. Until the live fetch
-exists, this data comes from `dummy_users/*.json`, which have exactly these API structures.
+exists, this data comes from `dummy_users/*.json`: these API responses, trimmed to the fields above.
 
-### Why the three differ, and what that costs
+The profile is kept **lean** on purpose: what the user builds (own repos, languages) and what they have
+contributed (merged PRs). Starred repos, opened issues and the bio were dropped to keep the input simple
+(the bio also caused false matches, e.g. "*learning* web development" → machine-learning repos).
 
-The model is **trained on 2.2** (PR text + issue titles) but **used on 2.3** (mostly repos and starred projects). The texts
+### Why the two differ, and what that costs
+
+The model is **trained on 2.1** (PR text + issue titles) but **used on 2.2** (mostly own repos and languages). The texts
 look different, so live recommendations are looser than the test score. This is limitation #1 in the report.
 
 ---
@@ -305,3 +289,6 @@ Catches variants like `good-first-issue`, `e-easy`, `🌱 good first issue`, `st
 | 2026-10-02 | **Improved the classifier:** full PR descriptions (≤ 2,000 chars) + titles of issues the developer opened; TF-IDF of words + word pairs + character 3–5-grams; small CV grids (`alpha`, `C`) chosen by top-5 accuracy | test accuracy 0.51 → 0.75, top-5 0.73 → 0.88, macro F1 0.36 → 0.68 |
 | 2026-10-02 | Remove each repo's PR-template sentences (in ≥ 3 PRs of the same repo) from the training text | templates identify the repo, not the developer; they inflated accuracy by ~5 points |
 | 2026-10-02 | App profile uses the same PR-description length (2,000 chars) as training | keep training and app input as similar as possible |
+| 2026-10-06 | Leaner app input: dummy users trimmed to the fields actually used (≈ 80% smaller); starred repos and opened issues dropped from the app profile | simpler input (bio, own repos, languages, merged PRs); costs some quality for users without PRs |
+| 2026-10-06 | Bio removed from the app profile too → input = own repos + languages + merged PRs | the bio is not tech-stack info and caused false matches ("learning web development" → scikit-learn, numpy) |
+| 2026-10-06 | **Leaner project:** removed `developer_profiles.csv` (EDA now computes developer stats from `pull_requests.csv`), unused columns (`issue_type`, `comment_count`, `reactions`, `assignee_count`, `license`, `is_archived`, `link_verified`), the one-off README repair step and `find_repos.py`; merged `data-collection-task.md`, `data-collection-and-processing.md` and `nlp-recommendation.md` into `PROJECT_OVERVIEW.md`, `NOTES.md` and `data_collection/README.md` | less to maintain and read; nothing used was removed |
