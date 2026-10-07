@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { fetchRecommendations, type Recommendation } from "./services/api";
+import appLogo from "../op3nsrc_lighttheme.png";
 
 type InputMode = "github" | "text";
 
@@ -65,9 +66,40 @@ function ArrowIcon() {
   );
 }
 
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+      <path d="m5 12 4 4L19 6" />
+    </svg>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor" className="size-4">
+      <path d="M8 5.5a1 1 0 0 1 1.52-.85l9.1 5.5a2.15 2.15 0 0 1 0 3.7l-9.1 5.5A1 1 0 0 1 8 18.5v-13Z" />
+    </svg>
+  );
+}
+
+function FeatureIcon({ kind }: { kind: "match" | "projects" | "issues" | "growth" }) {
+  const paths = {
+    match: <><circle cx="10.5" cy="13.5" r="6.5" /><path d="m15 9 6-6m-5 1h4v4M7 14l2.2 2.2L14 11" /></>,
+    projects: <><circle cx="12" cy="12" r="9" /><path d="m14.7 9.3-2.1 5.4-5.3 2.1 2.1-5.4 5.3-2.1ZM12 3v2m9 7h-2M5 12H3m9 9v-2" /></>,
+    issues: <><path d="M9 6h12M9 12h12M9 18h12" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>,
+    growth: <><path d="M5 16.5c3.2-6.4 7.3-9.7 14-10.5-.8 6.7-4.1 10.8-10.5 14L5 16.5Z" /><path d="M8 18c0-3 2-5 5-6m-7 7-2 2m11-12h.01" /></>,
+  };
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-6">
+      {paths[kind]}
+    </svg>
+  );
+}
+
 export default function App() {
   const [mode, setMode] = useState<InputMode>("github");
   const [query, setQuery] = useState("");
+  const [language, setLanguage] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [error, setError] = useState("");
@@ -86,13 +118,15 @@ export default function App() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    const normalizedQuery = trimmedQuery.replace(/^@/, "");
+    const normalizedQuery = mode === "github"
+      ? trimmedQuery.replace(/^https?:\/\/github\.com\//i, "").replace(/^@/, "").replace(/\/$/, "")
+      : trimmedQuery;
     setSubmittedQuery(normalizedQuery);
     setError("");
     setRecommendations([]);
     setIsLoading(true);
     try {
-      const result = await fetchRecommendations({ mode, query: normalizedQuery });
+      const result = await fetchRecommendations({ mode, query: normalizedQuery, language });
       setRecommendations(result.repos);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not load recommendations.");
@@ -102,36 +136,85 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f8f7] text-[#181817]">
-      <header className="border-b border-black/[0.07] bg-[#f8f8f7]/90">
-        <div className="mx-auto flex h-[72px] max-w-[1160px] items-center justify-between px-5 sm:px-8">
+    <div className="site-background min-h-screen text-[#181817]">
+      <header className="sticky top-0 z-20 border-b border-transparent bg-transparent backdrop-blur-sm">
+        <div className="flex min-h-[68px] w-full items-center justify-between gap-4 px-4 sm:min-h-[72px] sm:px-8 lg:px-12">
           <a
             href="#"
-            className="flex items-center gap-2.5 text-[15px] font-semibold tracking-[-0.02em]"
-            aria-label="Repos home"
+            className="flex shrink-0 items-center gap-2 text-[15px] font-semibold tracking-[-0.03em]"
+            aria-label="OpenSRC home"
           >
-            <span className="grid size-8 place-items-center rounded-[10px] bg-[#181817] text-white">
-              <GithubMark className="size-[17px]" />
-            </span>
-            Repo<span className="-ml-2.5 text-[#787873]">scope</span>
+            <img src={appLogo} alt="" className="size-10 shrink-0 object-contain" />
+            <span>Op3nSRC</span>
           </a>
-          <span className="hidden text-[13px] text-[#8a8a84] sm:block">
-            Find your next favorite project
-          </span>
+          <nav aria-label="Main navigation" className="flex items-center gap-2 text-[13px] sm:gap-5">
+            <div className="hidden items-center gap-5 md:flex">
+              <a href="#how-it-works" className="text-[#777770] hover:text-black">How it works</a>
+              <a href="#features" className="text-[#777770] hover:text-black">Features</a>
+              <a href="#recommendation" className="text-[#777770] hover:text-black">Explore</a>
+              <a href="#about" className="text-[#777770] hover:text-black">About</a>
+            </div>
+            <a href="#recommendation" className="interactive-cta whitespace-nowrap rounded-full bg-[#263e30] px-3 py-2 text-[12px] font-medium text-white shadow-[0_4px_14px_rgba(38,62,48,0.16)] sm:px-4 sm:text-[13px]"><span className="sm:hidden">Get started</span><span className="hidden sm:inline">Get recommendations</span></a>
+          </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-[920px] px-5 pb-20 pt-16 sm:px-8 sm:pt-24">
+      <main id="main-content" className="mx-auto max-w-[1600px] px-5 pb-20 sm:px-8 lg:px-12">
+        <section className="hero-layout relative isolate" aria-labelledby="page-title">
+          <div className="hero-copy">
+            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#dce8d8] bg-white/75 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#58705c]"><span className="size-1.5 rounded-full bg-[#65a30d]" />Open source discovery</p>
+            <h1 id="page-title" className="text-[clamp(2.5rem,5.5vw,5.2rem)] font-semibold leading-[1.02] tracking-[-0.055em]">Find open source that <span className="hero-title-accent">feels made for you.</span></h1>
+            <p className="mt-6 max-w-[600px] text-[15px] leading-7 text-[#58665a] sm:text-[18px]">OpenSRC matches your developer interests or GitHub profile with projects you can contribute to, then points you toward issues to get started.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a href="#recommendation" className="interactive-cta group inline-flex min-h-12 items-center justify-center gap-2 rounded-[12px] bg-[#263e30] px-6 text-[14px] font-semibold text-white shadow-[0_8px_22px_rgba(45,83,58,0.18)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#527c10]">Explore recommendations <ArrowIcon /></a>
+              <a href="#how-it-works" className="inline-flex min-h-12 items-center gap-2 rounded-[12px] border border-[#dfe5dd] bg-white/70 px-5 text-[14px] font-medium text-[#3d4940] transition hover:bg-white"><PlayIcon />See how it works</a>
+            </div>
+            <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-[12px] text-[#667269] sm:text-[13px]">
+              {['Personalized to your interests', 'Curated open source projects', 'Beginner-friendly issues'].map((label) => <li key={label} className="inline-flex items-center gap-2"><span className="grid size-6 place-items-center rounded-full border border-[#bce9c2] bg-[#effbf0] text-[#45a95d]"><CheckIcon /></span>{label}</li>)}
+            </ul>
+          </div>
+          <div className="hero-visual" aria-label="Illustration of how OpenSRC matches developers to projects">
+            <div className="hero-orbit" />
+            <div className="hero-orbit-dot orbit-dot-one" /><div className="hero-orbit-dot orbit-dot-two" /><div className="hero-orbit-dot orbit-dot-three" />
+            <img src={appLogo} alt="OpenSRC mascot" className="hero-mascot" />
+            <div className="hero-float-card profile-card"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-[#f1f1f4]"><GithubMark className="size-6" /></span><div><b>Your GitHub</b><p>Interests · Skills · Activity</p></div></div><div className="mini-bars"><i/><i/><i/><i/></div></div>
+            <div className="hero-float-card matches-card"><b>Matched projects</b><p><span/>AI / ML</p><p><span/>Web development</p><p><span/>Data science</p></div>
+            <div className="hero-float-card issues-card"><div className="flex items-center gap-2"><span className="issue-check"><CheckIcon /></span><b>Good first issues</b></div><p>Fix typo in docs <em>good first issue</em></p><p>Improve error handling <em>help wanted</em></p><p>Add test cases <em>beginner</em></p></div>
+          </div>
+        </section>
+
+        <section id="features" className="feature-strip scroll-mt-24" aria-label="OpenSRC benefits">
+          {([
+            ['match', 'Personalized matching', 'Based on your interests or GitHub profile'],
+            ['projects', 'Curated projects', 'High-quality, active open source repositories'],
+            ['issues', 'Actionable recommendations', 'Get suggested issues to start contributing'],
+            ['growth', 'Support your growth', 'Build skills and make real impact'],
+          ] as const).map(([kind, title, description]) => <article key={kind} className="feature-item"><span className={`feature-icon feature-${kind}`}><FeatureIcon kind={kind} /></span><div><h2>{title}</h2><p>{description}</p></div></article>)}
+        </section>
+
+        <section id="how-it-works" className="how-section scroll-mt-24" aria-labelledby="how-title">
+          <div className="how-copy"><p className="section-kicker">Get started</p><h2 id="how-title">How it works</h2><p className="how-intro">Go from your interests to your first contribution in a few simple steps.</p>
+            <div className="step-grid">{[
+              ['01', 'Tell us about you', 'Connect your GitHub or select your interests.'],
+              ['02', 'Get personalized matches', 'We find projects that fit your skills and interests.'],
+              ['03', 'Explore recommended issues', 'See curated, beginner-friendly issues to start with.'],
+              ['04', 'Start contributing', 'Make your first contribution and grow from there.'],
+            ].map(([number, title, description], index) => <article key={number} className="step-item"><span className={`step-icon step-icon-${index}`}><FeatureIcon kind={(['match','projects','issues','growth'] as const)[index]} /></span><h3>{number}. {title}</h3><p>{description}</p></article>)}</div>
+          </div>
+          <div className="project-stack" aria-label="Example project recommendations"><div className="stack-glow"/><article className="project-example project-example-one"><div className="project-emoji">🦜🔗</div><div className="project-example-body"><div className="flex items-center justify-between gap-2"><b>LangChain</b><span className="project-stars"><StarIcon />52.3k</span></div><p>Build with LLMs using LangChain.</p><div className="project-tags"><span>Python</span><span>AI</span><span>Good first issue</span></div></div></article><article className="project-example project-example-two"><div className="project-emoji fastapi-mark">ϟ</div><div className="project-example-body"><div className="flex items-center justify-between gap-2"><b>FastAPI</b><span className="project-stars">★ 74.1k</span></div><p>Modern, fast web framework for Python.</p><div className="project-tags"><span>Python</span><span>Web</span><span>Help wanted</span></div></div></article></div>
+        </section>
+
+      <div id="recommendation" className="scroll-mt-24">
         <section className="mx-auto max-w-[720px] text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#72726d] shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
             <span className="size-1.5 rounded-full bg-[#65a30d]" />
             Open source discovery
           </div>
-          <h1 className="text-[40px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[58px]">
+            <h2 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[48px]">
             Repositories, picked
             <br />
-            <span className="text-[#9b9b95]">for how you build.</span>
-          </h1>
+            <span className="text-[#66816a]">for how you build.</span>
+            </h2>
           <p className="mx-auto mt-6 max-w-[540px] text-[15px] leading-7 text-[#71716c] sm:text-base">
             Share your GitHub profile or describe what you&apos;re looking for.
             We&apos;ll surface open-source projects worth exploring.
@@ -144,11 +227,12 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => switchMode("github")}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                className={`mode-tab flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] px-2 py-2.5 text-[12px] font-medium sm:px-3 sm:text-[13px] ${
                   mode === "github"
-                    ? "bg-[#f0f0ed] text-[#20201e]"
-                    : "text-[#898984] hover:text-[#333330]"
+                    ? "mode-tab-active"
+                    : "mode-tab-inactive"
                 }`}
+                aria-pressed={mode === "github"}
               >
                 <GithubMark className="size-4" />
                 GitHub profile
@@ -156,14 +240,16 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => switchMode("text")}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-[10px] px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                className={`mode-tab flex min-h-11 flex-1 items-center justify-center gap-2 rounded-[10px] px-2 py-2.5 text-[12px] font-medium sm:px-3 sm:text-[13px] ${
                   mode === "text"
-                    ? "bg-[#f0f0ed] text-[#20201e]"
-                    : "text-[#898984] hover:text-[#333330]"
+                    ? "mode-tab-active"
+                    : "mode-tab-inactive"
                 }`}
+                aria-pressed={mode === "text"}
               >
                 <SearchIcon />
-                Describe your interests
+                <span className="sm:hidden">Interests</span>
+                <span className="hidden sm:inline">Describe your interests</span>
               </button>
             </div>
 
@@ -173,7 +259,7 @@ export default function App() {
                 className="mb-2 block text-[12px] font-medium text-[#6f6f6a]"
               >
                 {mode === "github"
-                  ? "GitHub username"
+                  ? "GitHub username or profile URL"
                   : "What are you interested in?"}
               </label>
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -185,6 +271,8 @@ export default function App() {
                   )}
                   <input
                     id="recommendation-query"
+                    required
+                    aria-required="true"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder={
@@ -199,18 +287,22 @@ export default function App() {
                 </div>
                 <button
                   type="submit"
-                  disabled={!query.trim() || isLoading}
-                  className="group flex h-12 items-center justify-center gap-2 rounded-[11px] bg-[#1d1d1b] px-5 text-[13px] font-medium text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-35"
+                  disabled={!query.trim() || (mode === "text" && !language.trim()) || isLoading}
+                  className="find-repositories group flex h-12 items-center justify-center gap-2 rounded-[11px] px-5 text-[13px] font-semibold text-white disabled:cursor-not-allowed"
                 >
                   {isLoading ? "Finding..." : "Find repositories"}
                   <ArrowIcon />
                 </button>
               </div>
+              {mode === "text" && <div className="mt-3">
+                <label htmlFor="language" className="mb-2 block text-[12px] font-medium text-[#6f6f6a]">Primary programming language</label>
+                <input id="language" value={language} onChange={(event) => setLanguage(event.target.value)} placeholder="e.g. Python" required aria-required="true" className="h-12 w-full rounded-[11px] border border-black/[0.09] bg-[#fafaf8] px-4 text-[14px] outline-none focus:border-[#77776f] focus:bg-white focus:ring-2 focus:ring-black/[0.04]" />
+              </div>}
             </form>
           </div>
-          {error && <p className="mt-3 text-center text-[12px] text-[#b42318]">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-center text-[12px] text-[#b42318]">{error}</p>}
           <p className="mt-3 text-center text-[11px] text-[#a0a09a]">
-            No sign-in required. We only use public GitHub data.
+            No sign-in required. Manual interests and language are stored to support recommendations.
           </p>
         </section>
 
@@ -295,14 +387,13 @@ export default function App() {
               ))}
             </div>
           </section>
-        ) : (
-          <div className="mx-auto mt-16 flex max-w-[720px] items-center gap-4 border-t border-black/[0.06] pt-5 text-[11px] text-[#aaa9a3]">
-            <span className="shrink-0">Built for curious developers</span>
-            <span className="h-px flex-1 bg-black/[0.05]" />
-            <span className="shrink-0">Updated from GitHub</span>
-          </div>
-        )}
+        ) : null}
+      </div>
       </main>
+      <footer id="about" className="mx-auto flex max-w-[1600px] items-center gap-5 px-5 pb-8 pt-2 text-[11px] text-[#748275] sm:px-8 lg:px-12">
+        <span className="shrink-0">Built for curious developers</span>
+        <span aria-hidden="true" className="h-px flex-1 bg-[#cbd8ca]" />
+      </footer>
     </div>
   );
 }
