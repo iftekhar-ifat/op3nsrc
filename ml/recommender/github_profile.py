@@ -7,6 +7,7 @@ Until the live fetch exists, `load_user` reads the dummy users.
 """
 
 import json
+from requests import HTTPError
 
 from .classification import BODY_CHARS
 from .data import ROOT, clean_text, name_words
@@ -19,8 +20,55 @@ def list_users():
 
 
 def load_user(username):
-    """GitHub data for one user (dummy file for now)."""
-    return json.loads((USERS / f"{username}.json").read_text())
+    """Load a demo user or fetch a real public GitHub profile."""
+    path = USERS / f"{username}.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    return fetch_user(username)
+
+
+def fetch_user(username):
+    """Build the trimmed profile shape from the public GitHub API."""
+    from ml.data_collection.github_client import get
+
+    try:
+        user = get(f"/users/{username}")
+        repos = get(f"/users/{username}/repos", params={
+            "type": "owner", "sort": "pushed", "per_page": 30,
+        })
+        languages = {
+            repo["full_name"]: get(f"/repos/{repo['full_name']}/languages")
+            for repo in repos
+        }
+        pull_requests = get("/search/issues", params={
+            "q": f"author:{username} type:pr is:merged",
+            "per_page": 100,
+        })
+    except HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            raise ValueError(f"GitHub user not found: {username}") from exc
+        raise ValueError(f"GitHub request failed for {username}") from exc
+
+    return {
+        "user": {"login": user["login"], "name": user.get("name")},
+        "repos": [{
+            "name": repo["name"],
+            "full_name": repo["full_name"],
+            "description": repo.get("description"),
+            "topics": repo.get("topics", []),
+            "language": repo.get("language"),
+            "fork": repo.get("fork", False),
+        } for repo in repos],
+        "languages": languages,
+        "pull_requests": {
+            "total_count": pull_requests.get("total_count", 0),
+            "items": [{
+                "title": pr.get("title", ""),
+                "body": pr.get("body") or "",
+                "repository_url": pr.get("repository_url", ""),
+            } for pr in pull_requests.get("items", [])],
+        },
+    }
 
 
 def _repo_name(api_url):
