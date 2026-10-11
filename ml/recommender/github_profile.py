@@ -1,9 +1,8 @@
 """Turn a user's GitHub data into one profile text.
 
 Input: trimmed GitHub REST API responses (see dummy_users/README.md) with four keys:
-user (login), repos (own repos: name, description, topics, language, fork),
-languages (bytes per language per repo) and pull_requests (merged PRs: title, body).
-Until the live fetch exists, `load_user` reads the dummy users.
+user (login), personal_readme, repos, languages and pull_requests. Real users are
+read from GitHub; demo users load the matching fixtures in dummy_users/.
 """
 
 import json
@@ -29,10 +28,26 @@ def load_user(username):
 
 def fetch_user(username):
     """Build the trimmed profile shape from the public GitHub API."""
-    from ml.data_collection.github_client import get
+    from ml.data_collection.github_client import get, get_text
 
     try:
         user = get(f"/users/{username}")
+    except HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 404:
+            raise ValueError(f"GitHub user not found: {username}") from exc
+        raise ValueError(f"Could not load the GitHub profile for {username}.") from exc
+
+    personal_readme = get_text(
+        f"/repos/{username}/{username}/readme",
+        headers={"Accept": "application/vnd.github.raw+json"},
+    )
+    if not personal_readme or not personal_readme.strip():
+        raise ValueError(
+            "Your GitHub profile has no personal README in a repository named "
+            f"{username}/{username}. Add one, or use the interests form instead."
+        )
+
+    try:
         repos = get(f"/users/{username}/repos", params={
             "type": "owner", "sort": "pushed", "per_page": 30,
         })
@@ -45,12 +60,14 @@ def fetch_user(username):
             "per_page": 100,
         })
     except HTTPError as exc:
-        if exc.response is not None and exc.response.status_code == 404:
-            raise ValueError(f"GitHub user not found: {username}") from exc
-        raise ValueError(f"GitHub request failed for {username}") from exc
+        raise ValueError(
+            f"Could not load repositories or contribution history for {username}. "
+            "Check that the profile is public and try again."
+        ) from exc
 
     return {
         "user": {"login": user["login"], "name": user.get("name")},
+        "personal_readme": personal_readme,
         "repos": [{
             "name": repo["name"],
             "full_name": repo["full_name"],
@@ -78,6 +95,13 @@ def _repo_name(api_url):
 
 def build_profile(gh):
     """Returns (profile_text, summary dict). Forked repos are skipped."""
+    personal_readme = gh.get("personal_readme", "")
+    if not personal_readme or not personal_readme.strip():
+        raise ValueError(
+            "This GitHub profile has no personal README, so there is not enough "
+            "profile text to match reliably. Use the interests form instead."
+        )
+
     own = [r for r in gh["repos"] if not r["fork"]]
 
     lang_bytes = {}
@@ -86,7 +110,7 @@ def build_profile(gh):
             lang_bytes[lang] = lang_bytes.get(lang, 0) + n
     top_langs = [l.lower() for l, _ in sorted(lang_bytes.items(), key=lambda kv: -kv[1])[:5]]
 
-    parts = [" ".join(top_langs)]
+    parts = [personal_readme[:5000], " ".join(top_langs)]
     for r in own:
         parts.append(" ".join([name_words(r["name"]), clean_text(r["description"]),
                                " ".join(r["topics"]), (r["language"] or "").lower()]))

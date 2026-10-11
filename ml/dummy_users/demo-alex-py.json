@@ -140,5 +140,6 @@
         "repository_url": "https://api.github.com/repos/tiangolo/fastapi"
       }
     ]
-  }
+  },
+  "personal_readme": "# Alex \u2014 Python developer\n\nI build Python backends with FastAPI, PostgreSQL, and typed APIs. I enjoy improving developer tools, testing, and accessible documentation.\n"
 }
