@@ -5,6 +5,7 @@ export type RecommendationMode = "github" | "text";
 export interface RecommendPayload {
     mode: RecommendationMode;
     query: string;
+    language?: string;
 }
 
 export interface IssueRecommendation {
