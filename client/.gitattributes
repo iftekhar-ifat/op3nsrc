@@ -147,4 +147,3 @@
 
 # Keep UI logo assets as regular PNG blobs so a standard clone works.
 *.png -filter -diff -merge
-public/*.png -filter -diff -merge
