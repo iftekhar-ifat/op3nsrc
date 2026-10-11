@@ -15,6 +15,7 @@
 
 html {
   background: #f7f9f4;
+  scroll-behavior: smooth;
 }
 
 .site-background {
@@ -143,6 +144,61 @@ input {
 button,
 a {
   -webkit-tap-highlight-color: transparent;
+}
+
+.ui-control {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(75, 91, 78, .18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .72);
+  padding: 0 12px;
+  color: #34483a;
+  font-size: 12px;
+  font-weight: 650;
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.ui-control:hover { transform: translateY(-1px); background: #fff; border-color: rgba(75, 91, 78, .35); }
+.theme-control { min-width: 74px; }
+
+.theme-dark.site-background { color: #e8eee9; }
+.theme-dark::before {
+  background:
+    radial-gradient(ellipse 48% 90% at 0% 26%, rgba(35, 85, 67, .25), transparent 92%),
+    radial-gradient(ellipse 48% 90% at 100% 28%, rgba(63, 53, 105, .2), transparent 92%),
+    linear-gradient(180deg, #111817 0%, #151b1b 55%, #111a18 100%);
+}
+.theme-dark header { border-color: rgba(222, 236, 225, .08); background: rgba(17, 24, 23, .78); }
+.theme-dark .ui-control { color: #e0e9e2; border-color: #3b4b42; background: #202927; }
+.theme-dark .ui-control:hover { background: #2b3733; }
+.theme-dark [class*="bg-white"],
+.theme-dark [class*="bg-[#fafaf8"],
+.theme-dark [class*="bg-[#f5f5f2"],
+.theme-dark [class*="bg-[#f1f1f4"],
+.theme-dark [class*="bg-[#fbfbf9"] { background-color: #202927 !important; }
+.theme-dark [class*="border-black"] { border-color: rgba(220, 235, 224, .14) !important; }
+.theme-dark [class*="text-[#"] { color: #bdc9c1 !important; }
+.theme-dark .hero-float-card, .theme-dark .project-example { background: rgba(30, 38, 38, .94); border-color: rgba(225, 235, 228, .12); }
+.theme-dark .hero-float-card b, .theme-dark .project-example-body b, .theme-dark .how-copy h2, .theme-dark .step-item h3, .theme-dark .feature-item h2 { color: #e4ece7; }
+.theme-dark .hero-float-card p, .theme-dark .project-example-body p, .theme-dark .feature-item p, .theme-dark .step-item p { color: #aab8af; }
+.theme-dark .mode-tab-active { color: #d9f2df; background: #294436; box-shadow: inset 0 0 0 1px #476e52; }
+.theme-dark .mode-tab-inactive { color: #b2c2b6; }
+.theme-dark .mode-tab-inactive:hover { background: #29352f; }
+.theme-dark input { background: #151c1b !important; border-color: rgba(220,235,224,.2) !important; color: #ecf2ee !important; }
+.theme-dark .results-for { border-color: #385c48; background: #1d3027; }
+.theme-dark .results-for p { color: #c5dfcd !important; }
+.theme-dark .find-repositories, .theme-dark .interactive-cta { color: #fff !important; }
+.theme-dark .recommendation-card-active { background-color: #27342e !important; }
+
+.recommendation-card { position: relative; transition: transform 220ms ease, box-shadow 220ms ease, background-color 220ms ease; }
+.recommendation-card-active { z-index: 1; transform: scale(1.008); background-color: #fbfff9; box-shadow: inset 0 0 0 1px rgba(103, 159, 91, .35), 0 0 28px rgba(107, 171, 94, .18); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ui-control, .recommendation-card { transition: none; }
 }
 
 /* Landing page composition */
