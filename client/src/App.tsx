@@ -178,7 +178,6 @@ export default function App() {
           <nav aria-label={fi ? "Päänavigaatio" : "Main navigation"} className="flex items-center gap-2 text-[13px] sm:gap-5">
             <div className="hidden items-center gap-5 md:flex">
               <a href="#how-it-works" className="text-[#777770] hover:text-black">{fi ? "Näin se toimii" : "How it works"}</a>
-              <a href="#features" className="text-[#777770] hover:text-black">{fi ? "Ominaisuudet" : "Features"}</a>
               <a href="#recommendation" className="text-[#777770] hover:text-black">{fi ? "Tutustu" : "Explore"}</a>
               <a href="#about" className="text-[#777770] hover:text-black">{fi ? "Tietoa" : "About"}</a>
             </div>
@@ -200,7 +199,7 @@ export default function App() {
               <a href="#how-it-works" className="inline-flex min-h-12 items-center gap-2 rounded-[12px] border border-[#dfe5dd] bg-white/70 px-5 text-[14px] font-medium text-[#3d4940] transition hover:bg-white"><PlayIcon />{fi ? "Katso miten se toimii" : "See how it works"}</a>
             </div>
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-[12px] text-[#667269] sm:text-[13px]">
-              {(fi ? ['Kiinnostuksiesi mukaan', 'Valikoituja avoimen lähdekoodin projekteja', 'Aloittelijaystävällisiä tehtäviä'] : ['Personalized to your interests', 'Curated open source projects', 'Beginner-friendly issues']).map((label) => <li key={label} className="inline-flex items-center gap-2"><span className="grid size-6 place-items-center rounded-full border border-[#bce9c2] bg-[#effbf0] text-[#45a95d]"><CheckIcon /></span>{label}</li>)}
+              {(fi ? ['Henkilökohtaiset suositukset', 'Valikoidut projektit', 'Tue kehittymistäsi'] : ['Personalized matching', 'Curated projects', 'Support your growth']).map((label) => <li key={label} className="inline-flex items-center gap-2"><span className="grid size-6 place-items-center rounded-full border border-[#bce9c2] bg-[#effbf0] text-[#45a95d]"><CheckIcon /></span>{label}</li>)}
             </ul>
           </div>
           <div className="hero-visual" aria-label="Illustration of how OpenSRC matches developers to projects">
@@ -211,15 +210,6 @@ export default function App() {
             <div className="hero-float-card matches-card"><b>{fi ? "Sopivat projektit" : "Matched projects"}</b><p><span/>AI / ML</p><p><span/>{fi ? "Verkkokehitys" : "Web development"}</p><p><span/>{fi ? "Data-analytiikka" : "Data science"}</p></div>
             <div className="hero-float-card issues-card"><div className="flex items-center gap-2"><span className="issue-check"><CheckIcon /></span><b>{fi ? "Hyvät aloitustehtävät" : "Good first issues"}</b></div><p>{fi ? "Korjaa kirjoitusvirhe" : "Fix typo in docs"} <em>good first issue</em></p><p>{fi ? "Paranna virheenkäsittelyä" : "Improve error handling"} <em>help wanted</em></p><p>{fi ? "Lisää testitapauksia" : "Add test cases"} <em>beginner</em></p></div>
           </div>
-        </section>
-
-        <section id="features" className="feature-strip scroll-mt-24" aria-label="OpenSRC benefits">
-          {([
-            ['match', fi ? 'Henkilökohtaiset osumat' : 'Personalized matching', fi ? 'Kiinnostustesi tai GitHub-profiilisi perusteella' : 'Based on your interests or GitHub profile'],
-            ['projects', fi ? 'Valikoidut projektit' : 'Curated projects', fi ? 'Laadukkaita ja aktiivisia avoimen lähdekoodin projekteja' : 'High-quality, active open source repositories'],
-            ['issues', fi ? 'Käytännön suositukset' : 'Actionable recommendations', fi ? 'Ehdotuksia tehtävistä, joista voit aloittaa' : 'Get suggested issues to start contributing'],
-            ['growth', fi ? 'Tue kehittymistäsi' : 'Support your growth', fi ? 'Kehitä taitojasi ja vaikuta projekteihin' : 'Build skills and make real impact'],
-          ] as const).map(([kind, title, description]) => <article key={kind} className="feature-item"><span className={`feature-icon feature-${kind}`}><FeatureIcon kind={kind} /></span><div><h2>{title}</h2><p>{description}</p></div></article>)}
         </section>
 
         <section id="how-it-works" className="how-section scroll-mt-24" aria-labelledby="how-title">
