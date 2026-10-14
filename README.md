@@ -1,129 +1,69 @@
-# op3nsrc
+# Op3nSRC
 
-**Personalized open-source contribution recommendations.** Enter a GitHub username and Op3nSrc recommends the **open-source projects that fit your skills**, plus **open issues inside each project** to start with. A text classifier (TF-IDF + Naive Bayes) picks the repos; text similarity picks the issues.
+Op3nSRC recommends open-source projects and issues based on a GitHub profile or interests you enter.
 
-> **1. vitejs/vite** — *Why:* vite, frontend, tooling
-> • #23179 Stale refresh when editing script in html file … 
-> • #23472 fix: image-set() URL rewrite truncates on nested parentheses
+![Op3nSRC home page](docs/assets/op3nsrc-home.png)
 
-**New here? Read [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md)** — the whole project end to end; [`NOTES.md`](NOTES.md) explains each part in detail and why. [`overall-idea.md`](overall-idea.md) has the motivation and plan, [Status](#status) below the progress.
+## Run it locally
 
-## Pipeline
+You need Python 3.10+, Node.js, npm, and a GitHub token. Open two terminal windows in the project folder.
 
-```text
-data/repo_list.csv (202 hand-picked repos)
-        ↓  data_collection/main.py      (GitHub API → data/raw/, needs a token)
-raw JSON: repos, READMEs, issues, merged PRs
-        ↓  data_collection/clean.py     (offline → data/cleaned/)
-cleaned tables (CSV)
-        ↓  notebooks/eda.ipynb             (explore)
-        ↓  notebooks/classification.ipynb  (train + test: developer text → repo)
-        ↓  notebooks/recommender.ipynb     (GitHub user → top 5 repos → top 3 issues each)
-recommendations → web app (Week 4)
-```
-
-## Quick start
-
-Create the virtual environment (Python 3.10+, one-time):
+### 1. Install Python packages and add your token
 
 ```bash
-python3 -m venv .venv
+python3 -m venv ml/.venv
+source ml/.venv/bin/activate
+python -m pip install -r ml/requirements.txt -r server/requirements.txt
+cp ml/.env.example ml/.env
 ```
+
+Open `ml/.env` and set `GITHUB_TOKEN=your_token`. A GitHub token with no extra scopes is enough for public data. Keep this file private; it is not part of the project files to commit.
+
+### 2. Collect the recommendation dataset
+
+The dataset is not included in Git. In the same terminal, run:
 
 ```bash
-source .venv/bin/activate
+cd ml
+python data_collection/main.py
+python data_collection/clean.py
+cd ..
 ```
+
+Collection can take around 30 minutes and can be resumed by running the collection command again. Cleaning builds the local files under `ml/data/cleaned/`.
+
+### 3. Start the API
+
+In terminal 1, from the project folder (with `ml/.venv` activated):
 
 ```bash
-pip install -r requirements.txt
+uvicorn app.main:app --app-dir server --reload --host 127.0.0.1 --port 8000
 ```
+
+Check that it is ready at <http://127.0.0.1:8000/health>.
+
+### 4. Start the website
+
+In terminal 2, from the project folder:
 
 ```bash
-python -m ipykernel install --user --name op3nsrc --display-name "Python (op3nsrc)"
+cd client
+npm install
+npm run dev -- --host 127.0.0.1
 ```
 
-`requirements.txt` lists the direct dependencies; `requirements-lock.txt` pins the exact versions that were tested (`pip install -r requirements-lock.txt` to reproduce exactly). Activate the environment (`source .venv/bin/activate`) in every new terminal; in Jupyter/VS Code pick the **Python (op3nsrc)** kernel.
+Open <http://127.0.0.1:5173>. The website calls the local API at port 8000 by default.
 
-Then set up the GitHub token (only needed for collection):
+## Optional: save recommendations from the interests form
 
-```bash
-cp .env.example .env            # then put your GitHub token in .env
-```
+The GitHub profile form works without a database. Saving manual interests requires PostgreSQL. Install and start PostgreSQL, create a database, then set `DATABASE_URL` in `ml/.env` (for example, `postgresql:///manual_recommendations`). The API creates its table when the first interests request is submitted. See [`server/README.md`](server/README.md).
 
-```bash
-python3 data_collection/main.py       # 1. collect raw data (resumable, ~30 min)
-```
+## Troubleshooting
 
-```bash
-python3 data_collection/clean.py      # 2. build the cleaned tables (~10 s, offline)
-```
+- **“ML dataset is not available”**: finish the collection and cleaning steps above.
+- **GitHub authentication or rate-limit errors**: check the token in `ml/.env`; rerun collection to resume.
+- **A GitHub profile has no personal README**: use the interests form, or add a README to a repository named `your-username/your-username`.
+- **“Manual recommendations need PostgreSQL”**: configure `DATABASE_URL` as described above, or use the GitHub profile form.
+- **Website says “Failed to fetch”**: make sure the API is running and `/health` opens before submitting.
 
-Details: [`data_collection/README.md`](data_collection/README.md).
-
-## Dataset
-
-`data/` is **not in git** (except `data/repo_list.csv`). Either rebuild it with the two commands above or download the shared copy:
-
-Collected dataset (local-only, uploaded externally):
-https://helsinkifi-my.sharepoint.com/:f:/g/personal/hongphan_ad_helsinki_fi/IgAv-VOvACUnQIBf-XSJrNbBAY5JkBTlGM-UinaqJdqfDx8?e=mWsG7X
-
-> ⚠️ The shared copy predates the 2026-10-01 re-collection (it is missing issues/PRs for about half the repos). Re-upload `data/raw/` + `data/cleaned/` and update this note.
-
-Current dataset (collection window: issues/PRs active since 2026-06-24):
-
-| Table (`data/cleaned/`)     | Rows   | What it is                                                              |
-| --------------------------- | ------ | ----------------------------------------------------------------------- |
-| `repositories.csv`          | 202    | Repo description, cleaned README, topics, languages, stars              |
-| `issues.csv`                | 15,053 | Issues; `final_text` is the NLP input (7,453 open, 210 beginner-friendly) |
-| `pull_requests.csv`         | 4,003  | Merged PRs that reference an issue (1,821 close an issue in our data)   |
-
-Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON strings (`json.loads`). All columns: [`data_collection/README.md`](data_collection/README.md#output-tables-datacleaned).
-
-17 repos from the original 219 were dropped: 12 have GitHub Issues disabled (django, postgres, git, mongo, kafka, flink, zookeeper, hibernate-orm, ruby, FFmpeg, emacs, calibre) and 5 are archived/inactive (minio, vue, zig, jinja, httpx).
-
-## Repository layout
-
-```text
-op3nsrc/
-├── README.md
-├── PROJECT_OVERVIEW.md                  # start here: the whole project end to end
-├── NOTES.md                             # details: profiles, leakage, split, metrics, "Why", decision log
-├── overall-idea.md                      # project idea, motivation, timeline
-├── notebooks/                           # run things + show results (implementation is in recommender/)
-│   ├── eda.ipynb                        # exploratory analysis + key findings
-│   ├── classification.ipynb             # dataset, train/test split, model comparison, test metrics
-│   └── recommender.ipynb                # demo: GitHub user → top 5 repos → top 3 issues each
-├── recommender/                         # implementation used by the notebooks
-│   ├── data.py                          # load cleaned tables, build repo/issue texts
-│   ├── classification.py                # dataset (developer text → repo), split, metrics
-│   ├── models.py                        # standard classifiers + TF-IDF text matcher
-│   ├── github_profile.py                # GitHub user data → profile text
-│   └── recommend.py                     # Recommender: user → repos → issues, with "Why"
-├── dummy_users/                         # fictional users in GitHub API format (input until live fetch)
-├── results/                             # test metrics per model (CSV)
-├── .env.example                         # copy to .env and add your token
-├── requirements.txt                     # direct dependencies
-├── requirements-lock.txt                # exact tested versions
-├── data/
-│   ├── repo_list.csv                    # the 202 repos (tracked in git)
-│   ├── raw/                             # raw API JSON (not in git)
-│   └── cleaned/                         # cleaned tables (not in git)
-└── data_collection/
-    ├── main.py                          # run collection (all steps or --step)
-    ├── github_client.py                 # shared API client (token, retries, rate limits)
-    ├── collect_repos.py                 # repo info, README, languages, topics
-    ├── collect_issues_and_prs.py        # issues + merged PRs (last 3 months)
-    ├── clean.py                         # raw JSON → cleaned tables
-    └── README.md                        # running the collection, cleaning rules, table columns
-```
-
-## Status
-
-- [x] Week 1 — data collection (202 repos)
-- [x] Week 2 — cleaning + tables
-- [x] Week 2 — EDA (`notebooks/eda.ipynb`)
-- [x] Week 3 — repo classifier: TF-IDF + Naive Bayes, test accuracy 75%, top-5 accuracy 88% vs 2% / 6% baseline (`notebooks/classification.ipynb`)
-- [x] Week 3 — recommender demo: GitHub user → repos + issues (`notebooks/recommender.ipynb`, dummy users)
-- [ ] Week 4 — web page
-- [ ] Week 4 — web app
-- [ ] Week 5 — fairness, privacy, final report
+More detail: [data collection](ml/data_collection/README.md) · [API setup](server/README.md).

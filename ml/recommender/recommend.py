@@ -31,21 +31,44 @@ class Recommender:
     def recommend(self, gh, top_repos=5, top_issues=3):
         """gh: GitHub data in API format. Returns {"user": summary, "repos": [...]}."""
         profile, summary = build_profile(gh)
+        return self.recommend_profile(profile, summary, top_repos, top_issues)
+
+    def recommend_profile(self, profile, summary, top_repos=5, top_issues=3):
+        """Recommend from an already-built profile text and summary."""
         proba = self.classifier.predict_proba([profile])[0]
         proba = np.where(self.class_mask, proba, -1)
         vec = self.matcher.embed([profile])
 
         results = []
-        for i in np.argsort(-proba)[:top_repos]:
+        eligible = np.flatnonzero(self.class_mask)
+        ranked = eligible[np.argsort(-proba[eligible])[:top_repos]]
+        for i in ranked:
             repo_id = self.classifier.classes_[i]
+            repo = self.repos.loc[repo_id]
             results.append({
                 "repo_id": repo_id,
+                "name": repo_id.split("/", 1)[-1],
+                "owner": repo_id.split("/", 1)[0],
+                "description": repo.description_clean,
+                "language": repo.primary_language,
+                "stars": int(repo.stars or 0),
                 "url": self.repos.at[repo_id, "html_url"],
                 "probability": float(proba[i]),
                 "why": self.matcher.shared_terms(vec, self.repo_vecs[repo_id]),
                 "issues": self._issues(vec, repo_id, top_issues),
             })
         return {"user": summary, "repos": results}
+
+    def recommend_text(self, text, top_repos=5, top_issues=3):
+        """Recommend from a free-form developer interest description."""
+        summary = {
+            "login": "text query",
+            "own repos": 0,
+            "forks skipped": 0,
+            "top languages": "",
+            "merged PRs": 0,
+        }
+        return self.recommend_profile(text, summary, top_repos, top_issues)
 
     def recommend_user(self, username, **kw):
         return self.recommend(load_user(username), **kw)

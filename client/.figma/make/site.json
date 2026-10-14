@@ -1,0 +1,14 @@
+{
+  "title": "Op3nSRC",
+  "description": "Provides personalized GitHub repository recommendations based on user input or free text, delivering concise lists with descriptions for efficient discovery.",
+  "icons": {
+    "icon": "/op3nsrc.png"
+  },
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
