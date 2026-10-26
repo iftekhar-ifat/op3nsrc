@@ -12,3 +12,10 @@ venv/
 **/data/cleaned/
 TODO.md
 .DS_Store
+
+# extra markdown docs (kept locally, not in the repo)
+ml/NOTES.md
+ml/PROJECT_OVERVIEW.md
+ml/overall-idea.md
+client/AGENTS.md
+client/CLAUDE.md

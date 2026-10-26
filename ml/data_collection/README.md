@@ -1,8 +1,7 @@
 # Data collection & cleaning
 
 Downloads public GitHub data for the repos in `data/repo_list.csv` (→ `data/raw/`, raw JSON) and turns it
-into clean tables (→ `data/cleaned/`, CSV). How the data is used afterwards is in `../PROJECT_OVERVIEW.md`;
-the reasoning behind the rules below is in `../NOTES.md`.
+into clean tables (→ `data/cleaned/`, CSV).
 
 | File | What it does |
 |---|---|

@@ -6,7 +6,7 @@
 > • #23179 Stale refresh when editing script in html file … 
 > • #23472 fix: image-set() URL rewrite truncates on nested parentheses
 
-**New here? Read [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md)** — the whole project end to end; [`NOTES.md`](NOTES.md) explains each part in detail and why. [`overall-idea.md`](overall-idea.md) has the motivation and plan, [Status](#status) below the progress.
+See [Status](#status) below for the progress.
 
 ## Pipeline
 
@@ -86,9 +86,6 @@ Load with `pd.read_csv(path, keep_default_na=False)`; list columns are JSON stri
 ```text
 op3nsrc/
 ├── README.md
-├── PROJECT_OVERVIEW.md                  # start here: the whole project end to end
-├── NOTES.md                             # details: profiles, leakage, split, metrics, "Why", decision log
-├── overall-idea.md                      # project idea, motivation, timeline
 ├── notebooks/                           # run things + show results (implementation is in recommender/)
 │   ├── eda.ipynb                        # exploratory analysis + key findings
 │   ├── classification.ipynb             # dataset, train/test split, model comparison, test metrics
