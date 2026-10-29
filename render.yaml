@@ -10,6 +10,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
+      - key: OP3NSRC_LOW_MEMORY
+        value: "true"
       - key: FRONTEND_ORIGINS
         fromService:
           type: web

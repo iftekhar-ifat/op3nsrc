@@ -25,18 +25,12 @@ load_dotenv(ROOT / ".env")
 TOKEN = os.getenv("GITHUB_TOKEN")
 BASE = "https://api.github.com"
 HEADERS = {
-    "Authorization": f"Bearer {TOKEN}",
     "Accept": "application/vnd.github+json",
 }
+if TOKEN:
+    HEADERS["Authorization"] = f"Bearer {TOKEN}"
 
 MAX_RETRIES = 5
-
-if not TOKEN:
-    raise SystemExit(
-        "No GITHUB_TOKEN found. Put it in <project_root>/.env as "
-        "GITHUB_TOKEN=ghp_your_token_here"
-    )
-
 
 def _is_rate_limited(resp):
     """True for primary (quota used up) or secondary (too fast) rate limits.

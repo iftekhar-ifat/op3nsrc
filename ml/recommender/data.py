@@ -24,21 +24,45 @@ TIME_COLUMNS = {
 BOOL_COLUMNS = {"issues": ["is_beginner_friendly", "is_help_wanted", "created_in_window"]}
 
 
-def load(name):
+COMPACT_COLUMNS = {
+    # Fields consumed by the serving recommender. Keeping the crawler's raw
+    # payloads out of the API process leaves more memory for inference.
+    "repositories": ["repo_id", "current_full_name", "primary_language", "topics",
+                    "description_clean", "readme_clean", "html_url", "stars"],
+    "issues": ["repo_id", "author_login", "title", "title_clean", "body_clean",
+               "final_text", "state", "number", "html_url", "labels",
+               "is_beginner_friendly", "is_help_wanted", "created_in_window"],
+    "pull_requests": ["repo_id", "author_login", "title_clean", "body_clean",
+                      "labels", "closes_issue_ids", "references_issue_ids",
+                      "closes_issue_ids_in_data"],
+}
+
+
+def load(name, compact=False):
     """Read one table from data/cleaned/ with JSON, time and bool columns parsed."""
-    df = pd.read_csv(DATA / f"{name}.csv", keep_default_na=False)
+    df = pd.read_csv(
+        DATA / f"{name}.csv",
+        keep_default_na=False,
+        usecols=COMPACT_COLUMNS[name] if compact else None,
+    )
     for c in JSON_COLUMNS[name]:
+        if c not in df:
+            continue
         df[c] = df[c].map(json.loads)
     for c in TIME_COLUMNS[name]:
+        if c not in df:
+            continue
         df[c] = pd.to_datetime(df[c].replace("", None), utc=True)
     for c in BOOL_COLUMNS.get(name, []):
+        if c not in df:
+            continue
         df[c] = df[c].astype(str) == "True"
     return df
 
 
-def load_all():
-    """All five cleaned tables, keyed by name."""
-    return {name: load(name) for name in JSON_COLUMNS}
+def load_all(compact=False):
+    """Load cleaned tables, optionally selecting only serving-time columns."""
+    return {name: load(name, compact=compact) for name in JSON_COLUMNS}
 
 
 # ---------------------------------------------------------------------------

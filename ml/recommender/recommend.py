@@ -1,5 +1,6 @@
 """GitHub user -> top 5 repos (classifier) -> top 3 open issues in each (text matching)."""
 
+import os
 import numpy as np
 
 from .data import issue_texts, repo_texts
@@ -24,7 +25,11 @@ class Recommender:
         # TF-IDF matcher for ranking issues and for the "Why"
         repo_docs = dict(zip(repos["repo_id"], repo_texts(repos)))
         issue_docs = issue_texts(self.issues, repos)
-        self.matcher = TextMatcher().fit(list(repo_docs.values()) + issue_docs)
+        low_memory = os.getenv("OP3NSRC_LOW_MEMORY", "").lower() in {"1", "true", "yes"}
+        self.matcher = TextMatcher(
+            max_features=30_000 if low_memory else None,
+            dtype=np.float32 if low_memory else np.float64,
+        ).fit(list(repo_docs.values()) + issue_docs)
         self.repo_vecs = {r: self.matcher.embed([d]) for r, d in repo_docs.items() if r in ok}
         self.issue_matrix = self.matcher.embed(issue_docs)
 

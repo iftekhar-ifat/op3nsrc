@@ -1,4 +1,6 @@
 import sys
+import os
+import gc
 from pathlib import Path
 from typing import Any, Dict
 
@@ -21,16 +23,24 @@ class ModelService:
         try:
             from ml.recommender.classification import build_dataset
             from ml.recommender.data import load_all
-            from ml.recommender.models import make_classifiers
+            from ml.recommender.models import make_classifiers, make_low_memory_classifier
             from ml.recommender.recommend import Recommender
 
-            tables = load_all()
+            low_memory = os.getenv("OP3NSRC_LOW_MEMORY", "").lower() in {"1", "true", "yes"}
+            tables = load_all(compact=low_memory)
             dataset = build_dataset(tables)
             if dataset.empty:
                 raise RuntimeError("the cleaned dataset contains no trainable developers")
 
-            classifier = make_classifiers(include_sbert=False)["TF-IDF + Logistic Regression"]
+            classifier = (
+                make_low_memory_classifier()
+                if low_memory
+                else make_classifiers(include_sbert=False)["TF-IDF + Logistic Regression"]
+            )
             classifier.fit(dataset["text"], dataset["repo"])
+            del dataset
+            tables.pop("pull_requests", None)
+            gc.collect()
             self.recommender = Recommender(classifier, tables["repositories"], tables["issues"])
             self.load_error = None
             print("ML recommender loaded successfully.")

@@ -88,11 +88,34 @@ def make_classifiers(include_sbert=True):
     return models
 
 
+def make_low_memory_classifier():
+    """A word-TF-IDF classifier sized for small hosted instances.
+
+    It uses the same labels and logistic-regression recommendation flow as the
+    full model, while omitting the larger character n-gram feature space.
+    """
+    vectorizer = TfidfVectorizer(
+        stop_words="english",
+        sublinear_tf=True,
+        min_df=2,
+        max_df=0.5,
+        max_features=20_000,
+        ngram_range=(1, 2),
+        token_pattern=TOKENS,
+        dtype=np.float32,
+    )
+    return make_pipeline(vectorizer, LogisticRegression(max_iter=1000, C=LR_C))
+
+
 class TextMatcher:
     """TF-IDF cosine similarity between a profile and documents, plus shared-word explanations."""
 
+    def __init__(self, max_features=None, dtype=np.float64):
+        self.max_features = max_features
+        self.dtype = dtype
+
     def fit(self, texts):
-        self.vectorizer = tfidf().fit(texts)
+        self.vectorizer = tfidf(max_features=self.max_features, dtype=self.dtype).fit(texts)
         self.terms = self.vectorizer.get_feature_names_out()
         return self
 
