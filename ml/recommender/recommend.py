@@ -1,4 +1,4 @@
-"""GitHub user -> top 5 repos (classifier) -> top 3 open issues in each (text matching)."""
+"""GitHub user -> top repos (hybrid fit) -> top open issues in each (text matching)."""
 
 import os
 import numpy as np
@@ -8,6 +8,9 @@ from .github_profile import build_profile, load_user
 from .models import TextMatcher
 
 LABEL_BOOST = 0.05   # small bonus for issues labelled good first issue / help wanted
+REPO_TEXT_WEIGHT = 0.75
+REPO_CLASSIFIER_WEIGHT = 1 - REPO_TEXT_WEIGHT
+REPO_SIMILARITY_HALF_SATURATION = 0.10
 
 
 class Recommender:
@@ -41,12 +44,25 @@ class Recommender:
     def recommend_profile(self, profile, summary, top_repos=5, top_issues=3):
         """Recommend from an already-built profile text and summary."""
         proba = self.classifier.predict_proba([profile])[0]
-        proba = np.where(self.class_mask, proba, -1)
         vec = self.matcher.embed([profile])
 
         results = []
         eligible = np.flatnonzero(self.class_mask)
-        ranked = eligible[np.argsort(-proba[eligible])[:top_repos]]
+        # The classifier learns which repositories contributors tend to work
+        # on, but its probabilities can be nearly uniform for short manual
+        # descriptions. Make direct profile-to-README similarity the main
+        # signal while retaining the classifier as a collaborative prior.
+        similarity = np.array([
+            float((vec @ self.repo_vecs[self.classifier.classes_[i]].T).toarray()[0, 0])
+            for i in eligible
+        ])
+        best_probability = max(float(proba[eligible].max()), 1e-12)
+        classifier_fit = np.clip(proba[eligible] / best_probability, 0, 1)
+        text_fit = similarity / (similarity + REPO_SIMILARITY_HALF_SATURATION)
+        eligible_fit = REPO_TEXT_WEIGHT * text_fit + REPO_CLASSIFIER_WEIGHT * classifier_fit
+        fit = np.full(len(self.classifier.classes_), -1.0)
+        fit[eligible] = eligible_fit
+        ranked = eligible[np.argsort(-fit[eligible])[:top_repos]]
         for i in ranked:
             repo_id = self.classifier.classes_[i]
             repo = self.repos.loc[repo_id]
@@ -58,7 +74,9 @@ class Recommender:
                 "language": repo.primary_language,
                 "stars": int(repo.stars or 0),
                 "url": self.repos.at[repo_id, "html_url"],
-                "probability": float(proba[i]),
+                # The API preserves its existing field name; this is a
+                # blended fit score rather than a calibrated probability.
+                "probability": float(fit[i]),
                 "why": self.matcher.shared_terms(vec, self.repo_vecs[repo_id]),
                 "issues": self._issues(vec, repo_id, top_issues),
             })

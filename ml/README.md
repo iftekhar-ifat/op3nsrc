@@ -1,6 +1,6 @@
 # op3nsrc
 
-**Personalized open-source contribution recommendations.** Enter a GitHub username and Op3nSrc recommends the **open-source projects that fit your skills**, plus **open issues inside each project** to start with. A text classifier (TF-IDF + Naive Bayes) picks the repos; text similarity picks the issues.
+**Personalized open-source contribution recommendations.** Enter a GitHub username or describe your interests and Op3nSrc recommends projects and open issues to explore. Repository ranking blends direct profile-to-README similarity with the TF-IDF + Naive Bayes contributor model; issue ranking uses text similarity and gives a small boost to beginner-friendly and help-wanted labels.
 
 > **1. vitejs/vite** — *Why:* vite, frontend, tooling
 > • #23179 Stale refresh when editing script in html file … 
