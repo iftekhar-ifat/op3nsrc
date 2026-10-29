@@ -29,12 +29,9 @@ COMPACT_COLUMNS = {
     # payloads out of the API process leaves more memory for inference.
     "repositories": ["repo_id", "current_full_name", "primary_language", "topics",
                     "description_clean", "readme_clean", "html_url", "stars"],
-    "issues": ["repo_id", "author_login", "title", "title_clean", "body_clean",
-               "final_text", "state", "number", "html_url", "labels",
-               "is_beginner_friendly", "is_help_wanted", "created_in_window"],
-    "pull_requests": ["repo_id", "author_login", "title_clean", "body_clean",
-                      "labels", "closes_issue_ids", "references_issue_ids",
-                      "closes_issue_ids_in_data"],
+    "issues": ["repo_id", "author_login", "title", "title_clean", "body_clean", "state", "number",
+               "html_url", "is_beginner_friendly", "is_help_wanted"],
+    "pull_requests": ["repo_id", "author_login", "title_clean", "body_clean"],
 }
 
 
@@ -103,4 +100,10 @@ def repo_texts(repos):
 def issue_texts(issues, repos):
     """Issue document = title + body (final_text) + the context of its repo."""
     ctx = repo_context(repos)
-    return list(issues["final_text"] + " | " + issues["repo_id"].map(ctx))
+    if "final_text" in issues:
+        text = issues["final_text"]
+    else:
+        body = issues["body_clean"]
+        title = issues["title_clean"]
+        text = title + body.map(lambda value: f". {value}" if value else "")
+    return list(text + " | " + issues["repo_id"].map(ctx))
