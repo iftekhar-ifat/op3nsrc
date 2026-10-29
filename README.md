@@ -2,6 +2,8 @@
 
 Op3nSRC recommends open-source projects and issues based on a GitHub profile or interests you enter.
 
+🌐 Live Website: https://op3nsrc-web.onrender.com/
+
 ![Op3nSRC home page](docs/assets/op3nsrc-home.png)
 
 ## Run it locally
