@@ -104,7 +104,10 @@ def make_low_memory_classifier():
         token_pattern=TOKENS,
         dtype=np.float32,
     )
-    return make_pipeline(vectorizer, LogisticRegression(max_iter=1000, C=LR_C))
+    # LogisticRegression's multiclass optimizer can allocate several dense
+    # work buffers even for sparse input. ComplementNB stays sparse end to end
+    # and is a better fit for Render's 512 MiB free instance.
+    return make_pipeline(vectorizer, ComplementNB(alpha=NB_ALPHA))
 
 
 class TextMatcher:
