@@ -12,7 +12,7 @@ services:
         value: 3.11.10
       - key: FRONTEND_ORIGINS
         fromService:
-          type: static
+          type: web
           name: op3nsrc-web
           envVarKey: RENDER_EXTERNAL_URL
       - key: DATABASE_URL
