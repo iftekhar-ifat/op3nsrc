@@ -20,12 +20,12 @@ services:
       - key: GITHUB_TOKEN
         sync: false
 
-  - type: static
+  - type: web
+    runtime: static
     name: op3nsrc-web
     branch: hosting
-    rootDir: client
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
+    buildCommand: cd client && npm ci && npm run build
+    staticPublishPath: client/dist
     envVars:
       - key: VITE_API_BASE_URL
         fromService:
